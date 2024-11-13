@@ -1,0 +1,33 @@
+===== DANH SACH INVOICE =====
+----------------------------------------
+Invoice [ID: HD1731521530670, Date: Thu Nov 14 01:12:10 ICT 2024]
+Khách hàng: Le Van C
+Nhân viên: Le Van X
+Sản phẩm:
+- Dell XPS 13 x1: 1,300đ
+Tổng tiền: 1,300đ
+----------------------------------------
+----------------------------------------
+Invoice [ID: HD1731521530670, Date: 2024-11-14 01:12:10]
+Khach hang: Le Van C
+Nhan vien: Le Van X
+San pham:
+- Dell XPS 13 x1: 1,300đ
+Tong tien: 1,300đ
+----------------------------------------
+----------------------------------------
+Invoice [ID: HD001, Date: 2024-11-14 01:13:42]
+Khach hang: Nguyen Van A
+Nhan vien: Le Van X
+San pham:
+- Dell XPS 13 x1: 1,300đ
+Tong tien: 1,300đ
+----------------------------------------
+----------------------------------------
+Invoice [ID: HD1731521643431, Date: 2024-11-14 01:14:03]
+Khach hang: QUANG
+Nhan vien: Le Van X
+San pham:
+- Logitech MX Master 3 x1: 100đ
+Tong tien: 100đ
+----------------------------------------

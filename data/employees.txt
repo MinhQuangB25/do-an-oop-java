@@ -1,0 +1,4 @@
+===== DANH SACH EMPLOYEE =====
+----------------------------------------
+Employee [ID: NV001, Name: Le Van X, Position: Sales, Basic Salary: 5000000.00]
+----------------------------------------

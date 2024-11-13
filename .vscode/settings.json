@@ -1,0 +1,6 @@
+{
+    "java.debug.settings.vmArgs": "-Dfile.encoding=UTF-8 -Dconsole.encoding=UTF-8",
+    "java.debug.settings.console": "integratedTerminal",
+    "files.encoding": "utf8",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt"
+} 

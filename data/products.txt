@@ -1,0 +1,12 @@
+===== DANH SACH PRODUCTS =====
+----------------------------------------
+Computer [ID: C001, Name: Dell XPS 13, Price: 1,300, Quantity: 3, CPU: Intel i7, RAM: 16GB, Hard Drive: 512GB SSD]
+----------------------------------------
+Computer [ID: C002, Name: MacBook Pro M2, Price: 1,900, Quantity: 3, CPU: Apple M2, RAM: 32GB, Hard Drive: 1TB SSD]
+----------------------------------------
+Accessory [ID: A001, Name: Logitech MX Master 3, Price: 100, Quantity: 6, Type: Mouse]
+----------------------------------------
+Accessory [ID: A002, Name: Keychron K2, Price: 90, Quantity: 4, Type: Keyboard]
+----------------------------------------
+Accessory [ID: A003, Name: Samsung 27" Monitor, Price: 300, Quantity: 4, Type: Monitor]
+----------------------------------------

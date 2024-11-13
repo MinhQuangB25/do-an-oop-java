@@ -1,0 +1,10 @@
+===== DANH SACH CUSTOMER =====
+----------------------------------------
+Customer [ID: KH001, Name: Nguyen Van A, Address: Ha Noi, Phone: 0123456789, Rank: Normal]
+----------------------------------------
+Customer [ID: KH002, Name: Tran Thi B, Address: Ho Chi Minh, Phone: 0987654321, Rank: Normal]
+----------------------------------------
+Customer [ID: KH003, Name: Le Van C, Address: Da Nang, Phone: 0369852147, Rank: Normal]
+----------------------------------------
+Customer [ID: KH010, Name: QUANG, Address: Ha Noi, Phone: 0899885663, Rank: Normal]
+----------------------------------------

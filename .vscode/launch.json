@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "type": "java",
+            "name": "Launch Main",
+            "request": "launch",
+            "mainClass": "Main",
+            "vmArgs": [
+                "-Dfile.encoding=UTF-8",
+                "-Dconsole.encoding=UTF-8"
+            ],
+            "env": {
+                "LANG": "en_US.UTF-8"
+            }
+        }
+    ]
+} 
