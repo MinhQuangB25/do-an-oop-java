@@ -42,36 +42,11 @@ public class Customer implements Identifiable, Printable, Serializable {
     }
 
     public void addInvoice(Invoice invoice) {
+        if (invoices == null) {
+            invoices = new ArrayList<>();
+        }
         invoices.add(invoice);
         totalPurchases += invoice.getTotalAmount();
-    }
-
-    public void displayPurchaseHistory() {
-        if (invoices.isEmpty()) {
-            System.out.println("Khách hàng chưa có đơn hàng nào!");
-            return;
-        }
-
-        System.out.println("\n=== LỊCH SỬ MUA HÀNG ===");
-        System.out.println("Khách hàng: " + name + " (ID: " + id + ")");
-        System.out.println("Tổng giá trị đã mua: " + String.format("%,.0fđ", totalPurchases));
-        System.out.println("\nChi tiết các đơn hàng:");
-        
-        for (Invoice invoice : invoices) {
-            System.out.println("----------------------------------------");
-            System.out.println("Mã hóa đơn: " + invoice.getId());
-            System.out.println("Ngày mua: " + invoice.getDate());
-            System.out.println("Nhân viên bán: " + invoice.getEmployee().getName());
-            System.out.println("Các sản phẩm:");
-            for (Invoice.InvoiceDetail detail : invoice.getItems()) {
-                System.out.printf("- %s x%d: %,.0fđ%n", 
-                    detail.getProduct().getName(),
-                    detail.getQuantity(),
-                    detail.getProduct().getPrice() * detail.getQuantity());
-            }
-            System.out.printf("Tổng tiền: %,.0fđ%n", invoice.getTotalAmount());
-        }
-        System.out.println("----------------------------------------");
     }
 
     public String getCustomerRank() {
@@ -90,6 +65,6 @@ public class Customer implements Identifiable, Printable, Serializable {
     @Override
     public void display() {
         System.out.println(getInfo());
-        System.out.printf("Tổng giá trị đã mua: %,.0fđ%n", totalPurchases);
+        System.out.printf("Tong gia tri da mua: %,.0f VND%n", totalPurchases);
     }
 } 

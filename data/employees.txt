@@ -1,4 +1,18 @@
-===== DANH SACH EMPLOYEE =====
 ----------------------------------------
-Employee [ID: NV001, Name: Le Van X, Position: Sales, Basic Salary: 5000000.00]
+Employee [ID: NV006, Name: Quan, Position: Sales, Basic Salary: 700,000]
+----------------------------------------
+----------------------------------------
+Employee [ID: NV005, Name: Thanh, Position: Sales, Basic Salary: 80,000,000]
+----------------------------------------
+----------------------------------------
+Employee [ID: KH010, Name: Ngan, Position: , Basic Salary: 2,000,000]
+----------------------------------------
+----------------------------------------
+Employee [ID: NV001, Name: Hao, Position: N/A, Basic Salary: 200,000]
+----------------------------------------
+----------------------------------------
+Employee [ID: NV002, Name: Dung, Position: , Basic Salary: 6,000,000]
+----------------------------------------
+----------------------------------------
+Employee [ID: NV003, Name: BINH, Position: N/A, Basic Salary: 400,000]
 ----------------------------------------

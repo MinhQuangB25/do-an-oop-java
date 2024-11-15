@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
+import java.text.SimpleDateFormat;
 
 public class Invoice implements Identifiable, Printable, Serializable {
     private String id;
@@ -15,74 +15,56 @@ public class Invoice implements Identifiable, Printable, Serializable {
     private Employee employee;
     private List<InvoiceDetail> items;
     private double totalAmount;
+    private List<String> displayDetails;
 
-    public Invoice(String id, Customer customer, Employee employee) {
-        this.id = id;
+    public Invoice() {
         this.date = new Date();
-        this.customer = customer;
-        this.employee = employee;
         this.items = new ArrayList<>();
         this.totalAmount = 0.0;
     }
 
-    // Inner class for invoice details
-    public static class InvoiceDetail implements Serializable {
-        private Product product;
-        private int quantity;
-        private double price;
-
-        public InvoiceDetail(Product product, int quantity, double price) {
-            this.product = product;
-            this.quantity = quantity;
-            this.price = price;
-        }
-
-        public double getSubtotal() {
-            return quantity * price;
-        }
-
-        // Getters
-        public Product getProduct() { return product; }
-        public int getQuantity() { return quantity; }
-        public double getPrice() { return price; }
+    public Invoice(String id, Customer customer, Employee employee) {
+        this.id = id;
+        this.customer = customer;
+        this.employee = employee;
+        this.date = new Date();
+        this.items = new ArrayList<>();
+        this.totalAmount = 0.0;
     }
 
+    public Invoice(String id, Date date) {
+        this.id = id;
+        this.date = date;
+        this.items = new ArrayList<>();
+    }
+
+    // Getters and Setters
+    @Override
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    
+    public Date getDate() { return date; }
+    public void setDate(Date date) { this.date = date; }
+    
+    public Customer getCustomer() { return customer; }
+    public void setCustomer(Customer customer) { this.customer = customer; }
+    
+    public Employee getEmployee() { return employee; }
+    public void setEmployee(Employee employee) { this.employee = employee; }
+    
+    public List<InvoiceDetail> getItems() { return items; }
+    public void setItems(List<InvoiceDetail> items) { 
+        this.items = items;
+        calculateTotal();
+    }
+
+    public double getTotalAmount() { return totalAmount; }
+
     public void addItem(Product product, int quantity) {
-        if (product == null) {
-            throw new IllegalArgumentException("Sản phẩm không tồn tại");
+        if (items == null) {
+            items = new ArrayList<>();
         }
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("Số lượng phải lớn hơn 0");
-        }
-        if (product.getQuantity() <= 0) {
-            throw new IllegalArgumentException("Sản phẩm " + product.getName() + " đã hết hàng");
-        }
-        if (product.getQuantity() < quantity) {
-            throw new IllegalArgumentException("Số lượng trong kho không đủ cho sản phẩm: " + product.getName() + 
-                " (Còn lại: " + product.getQuantity() + ")");
-        }
-
-        // Kiểm tra xem sản phẩm đã có trong hóa đơn chưa
-        Optional<InvoiceDetail> existingItem = items.stream()
-            .filter(item -> item.getProduct().getId().equals(product.getId()))
-            .findFirst();
-
-        if (existingItem.isPresent()) {
-            // Nếu đã có, kiểm tra tổng số lượng
-            InvoiceDetail detail = existingItem.get();
-            int newQuantity = detail.getQuantity() + quantity;
-            if (product.getQuantity() < newQuantity) {
-                throw new IllegalArgumentException("Tổng số lượng vượt quá số lượng trong kho");
-            }
-            items.remove(detail);
-            items.add(new InvoiceDetail(product, newQuantity, product.getPrice()));
-        } else {
-            // Nếu chưa có, thêm mới
-            items.add(new InvoiceDetail(product, quantity, product.getPrice()));
-        }
-
-        // Cập nhật số lượng sản phẩm
-        product.setQuantity(product.getQuantity() - quantity);
+        items.add(new InvoiceDetail(product, quantity));
         calculateTotal();
     }
 
@@ -92,42 +74,53 @@ public class Invoice implements Identifiable, Printable, Serializable {
                 .sum();
     }
 
-    // Getters and Setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    public Date getDate() { return date; }
-    public Customer getCustomer() { return customer; }
-    public Employee getEmployee() { return employee; }
-    public List<InvoiceDetail> getItems() { return items; }
-    public double getTotalAmount() { return totalAmount; }
-
-    public void setCustomer(Customer customer) {
-        this.customer = customer;
-    }
-
-    public void setEmployee(Employee employee) {
-        this.employee = employee;
-    }
-
     @Override
     public String getInfo() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Invoice [ID: %s, Date: %s]\n", id, date));
-        sb.append(String.format("Khách hàng: %s\n", customer.getName()));
-        sb.append(String.format("Nhân viên: %s\n", employee.getName()));
-        sb.append("Sản phẩm:\n");
+        sb.append(String.format("Invoice [ID: %s, Date: %s]\n", id, sdf.format(date)));
+        sb.append(String.format("Khach hang: %s\n", customer.getName()));
+        sb.append(String.format("Nhan vien: %s\n", employee.getName()));
+        sb.append("San pham:\n");
         for (InvoiceDetail item : items) {
-            sb.append(String.format("- %s x%d: %,dđ\n", 
-                item.getProduct().getName(), 
-                item.getQuantity(), 
-                (int)item.getSubtotal()));
+            sb.append(String.format("- %s x%d: %,.0f VND\n", 
+                item.getProduct().getName(),
+                item.getQuantity(),
+                item.getSubtotal()));
         }
-        sb.append(String.format("Tổng tiền: %,dđ", (int)totalAmount));
+        sb.append(String.format("Tong tien: %,.0f VND", totalAmount));
         return sb.toString();
     }
 
     @Override
     public void display() {
-        System.out.println(getInfo());
+        if (displayDetails != null && !displayDetails.isEmpty()) {
+            System.out.println("\n========== CHI TIET HOA DON ==========");
+            for (String line : displayDetails) {
+                System.out.println(line);
+            }
+            System.out.println("======================================");
+        } else {
+            // Fallback display nếu không có chi tiết
+            System.out.println(getInfo());
+        }
+    }
+
+    public void setDisplayDetails(List<String> details) {
+        this.displayDetails = details;
+    }
+
+    public static class InvoiceDetail implements Serializable {
+        private Product product;
+        private int quantity;
+
+        public InvoiceDetail(Product product, int quantity) {
+            this.product = product;
+            this.quantity = quantity;
+        }
+
+        public Product getProduct() { return product; }
+        public int getQuantity() { return quantity; }
+        public double getSubtotal() { return product.getPrice() * quantity; }
     }
 } 

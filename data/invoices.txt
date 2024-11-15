@@ -1,33 +1,27 @@
-===== DANH SACH INVOICE =====
+===== HOA DON BAN HANG =====
 ----------------------------------------
-Invoice [ID: HD1731521530670, Date: Thu Nov 14 01:12:10 ICT 2024]
-Khách hàng: Le Van C
-Nhân viên: Le Van X
-Sản phẩm:
-- Dell XPS 13 x1: 1,300đ
-Tổng tiền: 1,300đ
+Invoice [ID: HD2411157970, Date: 2024-11-15 14:41:44]
 ----------------------------------------
+Khach hang: KH001 - Nguyen Van A
 ----------------------------------------
-Invoice [ID: HD1731521530670, Date: 2024-11-14 01:12:10]
-Khach hang: Le Van C
-Nhan vien: Le Van X
-San pham:
-- Dell XPS 13 x1: 1,300đ
-Tong tien: 1,300đ
+Nhan vien: NV005 - Thanh
+----------------------------------------
+Chi tiet san pham:
+----------------------------------------
+- Logitech MX Master 3 (Ma: A001) x1: 100 VND
+----------------------------------------
+Tong tien: 100 VND
 ----------------------------------------
 ----------------------------------------
-Invoice [ID: HD001, Date: 2024-11-14 01:13:42]
-Khach hang: Nguyen Van A
-Nhan vien: Le Van X
-San pham:
-- Dell XPS 13 x1: 1,300đ
-Tong tien: 1,300đ
+Invoice [ID: HD2411151853, Date: 2024-11-15 15:16:12]
 ----------------------------------------
+Khach hang: KH002 - Tran Thi B
 ----------------------------------------
-Invoice [ID: HD1731521643431, Date: 2024-11-14 01:14:03]
-Khach hang: QUANG
-Nhan vien: Le Van X
-San pham:
-- Logitech MX Master 3 x1: 100đ
-Tong tien: 100đ
+Nhan vien: NV002 - Dung
+----------------------------------------
+Chi tiet san pham:
+----------------------------------------
+- Logitech MX Master 3 (Ma: A001) x1: 100 VND
+----------------------------------------
+Tong tien: 100 VND
 ----------------------------------------
