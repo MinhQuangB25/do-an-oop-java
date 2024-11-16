@@ -13,6 +13,8 @@ import java.text.SimpleDateFormat;
 //import java.text.ParseException;
 import java.util.Date;
 import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 public class InvoiceService {
     private List<Invoice> invoices;
@@ -145,139 +147,20 @@ public class InvoiceService {
     }
 
     public Optional<Invoice> findById(String id) {
-        if (id == null || id.trim().isEmpty()) {
-            return Optional.empty();
-        }
-
-        try {
-            List<String> lines = fileHandler.readAllLines(FILENAME);
-            Invoice currentInvoice = null;
-            List<String> currentInvoiceDetails = new ArrayList<>();
-            boolean isTargetInvoice = false;
-
-            for (String line : lines) {
-                if (line.trim().isEmpty() || line.startsWith("===") || line.startsWith("---")) {
-                    continue;
-                }
-
-                if (line.contains("Invoice [")) {
-                    // Nếu tìm thấy hóa đơn mới, xử lý hóa đơn hiện tại (nếu có)
-                    if (currentInvoice != null && isTargetInvoice) {
-                        return Optional.of(currentInvoice);
-                    }
-
-                    // Parse thông tin hóa đơn mới
-                    currentInvoice = parseInvoiceLine(line);
-                    currentInvoiceDetails.clear();
-                    isTargetInvoice = (currentInvoice != null && currentInvoice.getId().equals(id));
-                    if (isTargetInvoice) {
-                        currentInvoiceDetails.add(line);
-                    }
-                } else if (currentInvoice != null && isTargetInvoice) {
-                    // Thu thập thông tin chi tiết của hóa đơn
-                    if (line.startsWith("Khach hang:")) {
-                        String[] parts = line.substring("Khach hang:".length()).trim().split("-");
-                        if (parts.length > 0) {
-                            String customerId = parts[0].trim();
-                            customerService.findById(customerId).ifPresent(currentInvoice::setCustomer);
-                        }
-                        currentInvoiceDetails.add(line);
-                    } else if (line.startsWith("Nhan vien:")) {
-                        String[] parts = line.substring("Nhan vien:".length()).trim().split("-");
-                        if (parts.length > 0) {
-                            String employeeId = parts[0].trim();
-                            employeeService.findById(employeeId).ifPresent(currentInvoice::setEmployee);
-                        }
-                        currentInvoiceDetails.add(line);
-                    } else if (line.startsWith("Chi tiet san pham:")) {
-                        currentInvoiceDetails.add(line);
-                    } else if (line.startsWith("-") || line.startsWith("Tong tien:")) {
-                        currentInvoiceDetails.add(line);
-                    }
-                }
-            }
-
-            // Xử lý hóa đơn cuối cùng
-            if (currentInvoice != null && isTargetInvoice) {
-                // Lưu thông tin chi tiết vào hóa đơn để hiển thị
-                currentInvoice.setDisplayDetails(currentInvoiceDetails);
-                return Optional.of(currentInvoice);
-            }
-
-            return Optional.empty();
-        } catch (IOException e) {
-            System.err.println("Loi khi doc file hoa don: " + e.getMessage());
-            return Optional.empty();
-        }
+        loadInvoices();
+        return invoices.stream()
+            .filter(invoice -> invoice.getId().equals(id))
+            .findFirst();
     }
 
-    public List<Invoice> findByDate(Date searchDate) {
-        if (searchDate == null) return new ArrayList<>();
+    public List<Invoice> findByDate(Date date) {
+        loadInvoices();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        String searchDate = sdf.format(date);
         
-        try {
-            List<String> lines = fileHandler.readAllLines(FILENAME);
-            List<Invoice> result = new ArrayList<>();
-            Invoice currentInvoice = null;
-            List<String> currentInvoiceDetails = new ArrayList<>();
-            boolean isTargetInvoice = false;
-            
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            String searchDateStr = sdf.format(searchDate);
-            
-            for (String line : lines) {
-                if (line.trim().isEmpty() || line.startsWith("===") || line.startsWith("---")) {
-                    continue;
-                }
-                
-                if (line.contains("Invoice [")) {
-                    // Nếu đã có hóa đơn trước đó và là hóa đơn cần tìm, thêm vào kết quả
-                    if (currentInvoice != null && isTargetInvoice) {
-                        currentInvoice.setDisplayDetails(new ArrayList<>(currentInvoiceDetails));
-                        result.add(currentInvoice);
-                    }
-                    
-                    // Parse hóa đơn mới
-                    currentInvoice = parseInvoiceLine(line);
-                    currentInvoiceDetails.clear();
-                    currentInvoiceDetails.add(line);
-                    
-                    if (currentInvoice != null) {
-                        String invoiceDateStr = sdf.format(currentInvoice.getDate());
-                        isTargetInvoice = invoiceDateStr.equals(searchDateStr);
-                    } else {
-                        isTargetInvoice = false;
-                    }
-                } else if (currentInvoice != null && isTargetInvoice) {
-                    // Thu thập thông tin chi tiết của hóa đơn
-                    currentInvoiceDetails.add(line);
-                    
-                    if (line.startsWith("Khach hang:")) {
-                        String[] parts = line.substring("Khach hang:".length()).trim().split("-");
-                        if (parts.length > 0) {
-                            String customerId = parts[0].trim();
-                            customerService.findById(customerId).ifPresent(currentInvoice::setCustomer);
-                        }
-                    } else if (line.startsWith("Nhan vien:")) {
-                        String[] parts = line.substring("Nhan vien:".length()).trim().split("-");
-                        if (parts.length > 0) {
-                            String employeeId = parts[0].trim();
-                            employeeService.findById(employeeId).ifPresent(currentInvoice::setEmployee);
-                        }
-                    }
-                }
-            }
-            
-            // Xử lý hóa đơn cuối cùng nếu là hóa đơn cần tìm
-            if (currentInvoice != null && isTargetInvoice) {
-                currentInvoice.setDisplayDetails(new ArrayList<>(currentInvoiceDetails));
-                result.add(currentInvoice);
-            }
-            
-            return result;
-        } catch (IOException e) {
-            System.err.println("Lỗi khi đọc file: " + e.getMessage());
-            return new ArrayList<>();
-        }
+        return invoices.stream()
+            .filter(invoice -> sdf.format(invoice.getDate()).equals(searchDate))
+            .collect(Collectors.toList());
     }
 
     private void loadInvoices() {
@@ -334,13 +217,13 @@ public class InvoiceService {
                         }
                     } else if (line.startsWith("Tong tien:")) {
                         // Parse tổng tiền nếu cần
-                        String amountStr = line.substring("Tong tien:".length())
-                            .trim()
-                            .replace("VND", "")
-                            .replace(",", "")
-                            .trim();
+                        //String amountStr = line.substring("Tong tien:".length())
+                        //    .trim()
+                        //    .replace("VND", "")
+                        //    .replace(",", "")
+                        //    .trim();
                         try {
-                            double totalAmount = Double.parseDouble(amountStr);
+                            //double totalAmount = Double.parseDouble(amountStr);
                             // Không cần set totalAmount vì nó được tính tự động từ items
                         } catch (NumberFormatException e) {
                             System.err.println("Lỗi khi parse số tiền: " + e.getMessage());
@@ -386,5 +269,125 @@ public class InvoiceService {
                                  invoice.getCustomer().getId().equals(customerId))
                 .sorted((i1, i2) -> i2.getDate().compareTo(i1.getDate())) // Sắp xếp theo ngày mới nhất
                 .collect(Collectors.toList());
+    }
+
+    // Thống kê doanh thu theo khoảng thời gian
+    public double calculateRevenue(Date startDate, Date endDate) {
+        loadInvoices();
+        return invoices.stream()
+            .filter(invoice -> {
+                Date invoiceDate = invoice.getDate();
+                return !invoiceDate.before(startDate) && !invoiceDate.after(endDate);
+            })
+            .mapToDouble(this::calculateInvoiceTotal)
+            .sum();
+    }
+
+    // Thống kê số lượng hóa đơn theo khoảng thời gian
+    public int countInvoices(Date startDate, Date endDate) {
+        loadInvoices();
+        return (int) invoices.stream()
+            .filter(invoice -> {
+                Date invoiceDate = invoice.getDate();
+                return !invoiceDate.before(startDate) && !invoiceDate.after(endDate);
+            })
+            .count();
+    }
+
+    // Thống kê doanh thu theo khách hàng
+    public Map<Customer, Double> calculateRevenueByCustomer(Date startDate, Date endDate) {
+        loadInvoices();
+        return invoices.stream()
+            .filter(invoice -> {
+                Date invoiceDate = invoice.getDate();
+                return !invoiceDate.before(startDate) && !invoiceDate.after(endDate);
+            })
+            .filter(invoice -> invoice.getCustomer() != null)
+            .collect(Collectors.groupingBy(
+                Invoice::getCustomer,
+                Collectors.summingDouble(this::calculateInvoiceTotal)
+            ));
+    }
+
+    // Thống kê doanh thu theo nhân viên
+    public Map<Employee, Double> calculateRevenueByEmployee(Date startDate, Date endDate) {
+        loadInvoices();
+        return invoices.stream()
+            .filter(invoice -> {
+                Date invoiceDate = invoice.getDate();
+                return !invoiceDate.before(startDate) && !invoiceDate.after(endDate);
+            })
+            .filter(invoice -> invoice.getEmployee() != null)
+            .collect(Collectors.groupingBy(
+                Invoice::getEmployee,
+                Collectors.summingDouble(this::calculateInvoiceTotal)
+            ));
+    }
+
+    // Thống kê sản phẩm bán chạy
+    public Map<Product, Integer> getTopSellingProducts(Date startDate, Date endDate) {
+        loadInvoices();
+        Map<Product, Integer> productQuantities = new HashMap<>();
+        
+        invoices.stream()
+            .filter(invoice -> {
+                Date invoiceDate = invoice.getDate();
+                return !invoiceDate.before(startDate) && !invoiceDate.after(endDate);
+            })
+            .flatMap(invoice -> invoice.getItems().stream())
+            .forEach(detail -> {
+                Product product = detail.getProduct();
+                productQuantities.merge(product, detail.getQuantity(), Integer::sum);
+            });
+        
+        return productQuantities;
+    }
+
+    // Hiển thị báo cáo thống kê
+    public void displayStatistics(Date startDate, Date endDate) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        System.out.println("\n========== BAO CAO THONG KE ==========");
+        System.out.println("Tu ngay: " + sdf.format(startDate));
+        System.out.println("Den ngay: " + sdf.format(endDate));
+        System.out.println("----------------------------------------");
+        
+        // Thống kê cơ bản
+        double totalRevenue = calculateRevenue(startDate, endDate);
+        int totalInvoices = countInvoices(startDate, endDate);
+        System.out.printf("Tong doanh thu: %,.0f VND%n", totalRevenue);
+        System.out.printf("Tong so hoa don: %d%n", totalInvoices);
+        System.out.println("----------------------------------------");
+        
+        // Thống kê theo khách hàng
+        System.out.println("Doanh thu theo khach hang:");
+        calculateRevenueByCustomer(startDate, endDate).forEach((customer, revenue) -> {
+            System.out.printf("- %s: %,.0f VND%n", customer.getName(), revenue);
+        });
+        System.out.println("----------------------------------------");
+        
+        // Thống kê theo nhân viên
+        System.out.println("Doanh thu theo nhân viên:");
+        calculateRevenueByEmployee(startDate, endDate).forEach((employee, revenue) -> {
+            System.out.printf("- %s: %,.0f VND%n", employee.getName(), revenue);
+        });
+        System.out.println("----------------------------------------");
+        
+        // Thống kê sản phẩm bán chạy
+        System.out.println("Top san pham ban chay:");
+        getTopSellingProducts(startDate, endDate).entrySet().stream()
+            .sorted(Map.Entry.<Product, Integer>comparingByValue().reversed())
+            .limit(5) // Hiển thị top 5 sản phẩm
+            .forEach(entry -> {
+                System.out.printf("- %s: %d san pham%n", 
+                    entry.getKey().getName(), entry.getValue());
+            });
+        System.out.println("========================================");
+    }
+
+    // Helper method để tính tổng tiền của một hóa đơn
+    private double calculateInvoiceTotal(Invoice invoice) {
+        return invoice.getItems().stream()
+            .mapToDouble(detail -> detail.getProduct().getPrice() * detail.getQuantity())
+            .sum();
     }
 } 

@@ -16,7 +16,7 @@ public class FileHandler<T> {
     private boolean isUpdatingFile = false;
     private CustomerService customerService;
     private EmployeeService employeeService;
-    private ProductService productService;
+   // private ProductService productService;
 
     public FileHandler() {
         createDataDirectoryIfNotExists();
@@ -304,6 +304,6 @@ public class FileHandler<T> {
     public void setServices(CustomerService customerService, EmployeeService employeeService, ProductService productService) {
         this.customerService = customerService;
         this.employeeService = employeeService;
-        this.productService = productService;
+        //this.productService = productService;
     }
 } 

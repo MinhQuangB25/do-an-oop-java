@@ -100,11 +100,47 @@ public class CustomerService {
     }
 
     public void deleteCustomer(String id) {
-        List<Customer> customers = getAllCustomers();
-        customers.removeIf(c -> c.getId().equals(id));
-        fileHandler.setUpdatingFile(true);
-        fileHandler.saveToFile(FILENAME, customers);
-        fileHandler.setUpdatingFile(false);
+        try {
+            List<String> lines = fileHandler.readAllLines(FILENAME);
+            List<String> updatedLines = new ArrayList<>();
+            boolean isFirstSection = true;
+            
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
+                
+                // Giữ lại header
+                if (isFirstSection && (line.startsWith("=====") || line.trim().isEmpty())) {
+                    updatedLines.add(line);
+                    continue;
+                }
+                isFirstSection = false;
+                
+                // Kiểm tra nếu đây là phần thông tin khách hàng cần xóa
+                if (line.contains("Customer [") && line.contains("ID: " + id + ",")) {
+                    // Bỏ qua dòng phân cách trước thông tin khách hàng (nếu có)
+                    if (i > 0 && lines.get(i-1).startsWith("----")) {
+                        continue;
+                    }
+                    // Bỏ qua dòng phân cách sau thông tin khách hàng (nếu có)
+                    if (i < lines.size() - 1 && lines.get(i+1).startsWith("----")) {
+                        i++; // Skip next line
+                    }
+                    continue;
+                }
+                
+                updatedLines.add(line);
+            }
+            
+            // Ghi lại file với nội dung đã cập nhật
+            fileHandler.setUpdatingFile(true);
+            Files.write(Paths.get(fileHandler.getDirectory() + FILENAME), 
+                       updatedLines, 
+                       StandardCharsets.UTF_8);
+            fileHandler.setUpdatingFile(false);
+            
+        } catch (IOException e) {
+            System.err.println("Loi khi xoa khach hang: " + e.getMessage());
+        }
     }
 
     public Optional<Customer> findById(String id) {
@@ -210,6 +246,22 @@ public class CustomerService {
     }
 
     public void displayCustomersFromFile() {
-        fileHandler.readTextFile(FILENAME);
+        try {
+            List<String> lines = fileHandler.readAllLines(FILENAME);
+            if (lines.isEmpty()) {
+                System.out.println("Danh sach khach hang trong!");
+                return;
+            }
+
+            // In danh sách khách hàng
+            for (String line : lines) {
+                if (line.contains("Customer [")) {
+                    System.out.println(line);
+                    System.out.println("----------------------------------------");
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Loi khi doc file khach hang: " + e.getMessage());
+        }
     }
 } 

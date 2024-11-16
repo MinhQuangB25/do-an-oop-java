@@ -419,7 +419,7 @@ public class Main {
             String employeeId = getStringInput("\nNhap ma nhan vien ban hang: ");
             Optional<Employee> employeeOpt = employeeService.findById(employeeId);
             if (employeeOpt.isEmpty()) {
-                System.out.println("Kh��ng tìm thấy nhân viên! Vui lòng thử lại.");
+                System.out.println("Khng tìm thấy nhân viên! Vui lòng thử lại.");
                 continue;
             }
             employee = employeeOpt.get();
@@ -639,11 +639,17 @@ public class Main {
         System.out.println("\n=== TIM KIEM NHAN VIEN ===");
         String keyword = getStringInput("Nhap ten nhan vien can tim: ");
         List<Employee> employees = employeeService.findByName(keyword);
+        
         if (employees.isEmpty()) {
             System.out.println("Khong tim thay nhan vien nao!");
             return;
         }
-        employees.forEach(Employee::display);
+        
+        System.out.println("\nKet qua tim kiem:");
+        for (Employee employee : employees) {
+            System.out.println("----------------------------------------");
+            employee.display();
+        }
     }
 
     private static void updateEmployee() {
@@ -747,83 +753,117 @@ public class Main {
         while (true) {
             System.out.println("\n===== QUAN LY HOA DON =====");
             System.out.println("1. Xem danh sach hoa don");
-            System.out.println("2. Tim kiem hoa don theo ma");
-            System.out.println("3. Tim kiem hoa don theo ngay");
+            System.out.println("2. Tim kiem hoa don");
+            System.out.println("3. Xem thong ke");
             System.out.println("0. Quay lai");
 
             int choice = getIntInput("Nhap lua chon: ");
             switch (choice) {
                 case 1 -> displayInvoices();
-                case 2 -> findInvoiceById();
-                case 3 -> findInvoiceByDate();
+                case 2 -> searchInvoices();
+                case 3 -> viewStatistics();
                 case 0 -> { return; }
                 default -> System.out.println("Lua chon khong hop le!");
             }
         }
     }
 
-    private static void findInvoiceByDate() {
-        System.out.println("\n=== TIM HOA DON THEO NGAY ===");
-        System.out.println("Nhap ngay (dd/MM/yyyy): ");
-        Date searchDate = getDateInput();
-        
-        if (searchDate == null) {
-            System.out.println("Ngay khong hop le!");
-            return;
-        }
-
-        List<Invoice> invoices = invoiceService.findByDate(searchDate);
-        if (invoices.isEmpty()) {
-            System.out.println("Khong tim thay hoa don nao!");
-            return;
-        }
-
-        System.out.println("\nDanh sach hoa don tim thay:");
-        for (Invoice invoice : invoices) {
-            System.out.println("----------------------------------------");
-            invoice.display();
-        }
-    }
-
-    private static Date getDateInput() {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        sdf.setLenient(false);
-        while (true) {
-            try {
-                String dateStr = scanner.nextLine().trim();
-                if (dateStr.isEmpty()) {
-                    return null;
-                }
-                return sdf.parse(dateStr);
-            } catch (ParseException e) {
-                System.out.println("Ngay khong hop le! Vui long nhap lai (dd/MM/yyyy): ");
-            }
-        }
-    }
+    
 
     private static void displayInvoices() {
         System.out.println("\n=== DANH SACH HOA DON ===");
         invoiceService.displayInvoicesFromFile();
     }
 
-    private static void findInvoiceById() {
-        System.out.println("\n=== TIM HOA DON THEO MA ===");
+    private static void searchInvoices() {
+        System.out.println("\n=== TIM KIEM HOA DON ===");
+        System.out.println("1. Tim theo ma hoa don");
+        System.out.println("2. Tim theo ngay");
+        System.out.println("0. Quay lai");
         
-        // Hiển thị danh sách hóa đơn trước khi yêu cầu nhập mã
-        System.out.println("\nDanh sach hoa don hien co:");
-        invoiceService.displayInvoicesFromFile();
+        int choice = getIntInput("Nhap lua chon: ");
+        switch (choice) {
+            case 1 -> searchInvoiceById();
+            case 2 -> searchInvoiceByDate();
+            case 0 -> { return; }
+            default -> System.out.println("Lua chon khong hop le!");
+        }
+    }
+
+    private static void searchInvoiceById() {
+        String invoiceId = getStringInput("Nhap ma hoa don can tim: ");
+        Optional<Invoice> invoice = invoiceService.findById(invoiceId);
         
-        String id = getStringInput("\nNhap ma hoa don can tim: ");
-        Optional<Invoice> invoiceOpt = invoiceService.findById(id);
-        
-        if (invoiceOpt.isEmpty()) {
+        if (invoice.isEmpty()) {
             System.out.println("Khong tim thay hoa don!");
             return;
         }
         
-        System.out.println("\nChi tiet hoa don:");
+        System.out.println("\nKet qua tim kiem:");
         System.out.println("----------------------------------------");
-        invoiceOpt.get().display();
+        invoice.get().display();
+    }
+
+    private static void searchInvoiceByDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        Date searchDate = null;
+        
+        while (searchDate == null) {
+            String dateStr = getStringInput("Nhap ngay can tim (dd/MM/yyyy): ");
+            try {
+                searchDate = sdf.parse(dateStr);
+            } catch (ParseException e) {
+                System.out.println("Dinh dang ngay khong hop le! Vui long nhap lai.");
+            }
+        }
+        
+        List<Invoice> invoices = invoiceService.findByDate(searchDate);
+        
+        if (invoices.isEmpty()) {
+            System.out.println("Khong tim thay hoa don nao!");
+            return;
+        }
+        
+        System.out.println("\nKet qua tim kiem:");
+        for (Invoice invoice : invoices) {
+            System.out.println("----------------------------------------");
+            invoice.display();
+        }
+    }
+
+    private static void viewStatistics() {
+        System.out.println("\n=== XEM THONG KE ===");
+        
+        // Nhập khoảng thời gian
+        Date startDate = null;
+        Date endDate = null;
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        
+        while (startDate == null) {
+            String startDateStr = getStringInput("Nhap ngay bat dau (dd/MM/yyyy): ");
+            try {
+                startDate = sdf.parse(startDateStr);
+            } catch (ParseException e) {
+                System.out.println("Dinh dang ngay khong hop le! Vui long nhap lai.");
+            }
+        }
+        
+        while (endDate == null) {
+            String endDateStr = getStringInput("Nhap ngay ket thuc (dd/MM/yyyy): ");
+            try {
+                endDate = sdf.parse(endDateStr);
+                if (endDate.before(startDate)) {
+                    System.out.println("Ngay ket thuc phai sau ngay bat dau!");
+                    endDate = null;
+                    continue;
+                }
+            } catch (ParseException e) {
+                System.out.println("Dinh dang ngay khong hop le! Vui long nhap lai.");
+            }
+        }
+        
+        // Hiển thị thống kê
+        invoiceService.displayStatistics(startDate, endDate);
     }
 
     // Utility methods for input handling

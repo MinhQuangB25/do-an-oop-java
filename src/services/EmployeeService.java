@@ -1,17 +1,20 @@
 package services;
 
 import models.Employee;
-import models.Invoice;
+//import models.Invoice;
 import utils.FileHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 
 public class EmployeeService {
     private FileHandler<Employee> fileHandler;
     private static final String FILENAME = "employees.txt";
-    private InvoiceService invoiceService;
+    //private InvoiceService invoiceService;
     private List<Employee> employees;
 
     public EmployeeService() {
@@ -20,7 +23,7 @@ public class EmployeeService {
     }
 
     public void setInvoiceService(InvoiceService invoiceService) {
-        this.invoiceService = invoiceService;
+       // this.invoiceService = invoiceService;
     }
 
     public void addEmployee(Employee employee) {
@@ -69,11 +72,50 @@ public class EmployeeService {
     }
 
     public void deleteEmployee(String id) {
-        loadEmployees();
-        employees.removeIf(e -> e.getId().equals(id));
-        fileHandler.setUpdatingFile(true);
-        fileHandler.saveToFile(FILENAME, employees);
-        fileHandler.setUpdatingFile(false);
+        try {
+            List<String> lines = fileHandler.readAllLines(FILENAME);
+            List<String> updatedLines = new ArrayList<>();
+            boolean isFirstSection = true;
+            
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
+                
+                // Giữ lại header
+                if (isFirstSection && (line.startsWith("=====") || line.trim().isEmpty())) {
+                    updatedLines.add(line);
+                    continue;
+                }
+                isFirstSection = false;
+                
+                // Kiểm tra nếu đây là phần thông tin nhân viên cần xóa
+                if (line.contains("Employee [") && line.contains("ID: " + id + ",")) {
+                    // Bỏ qua dòng phân cách trước thông tin nhân viên (nếu có)
+                    if (i > 0 && lines.get(i-1).startsWith("----")) {
+                        continue;
+                    }
+                    // Bỏ qua dòng phân cách sau thông tin nhân viên (nếu có)
+                    if (i < lines.size() - 1 && lines.get(i+1).startsWith("----")) {
+                        i++; // Skip next line
+                    }
+                    continue;
+                }
+                
+                updatedLines.add(line);
+            }
+            
+            // Ghi lại file với nội dung đã cập nhật
+            fileHandler.setUpdatingFile(true);
+            Files.write(Paths.get(fileHandler.getDirectory() + FILENAME), 
+                       updatedLines, 
+                       StandardCharsets.UTF_8);
+            fileHandler.setUpdatingFile(false);
+            
+            // Cập nhật danh sách trong bộ nhớ
+            loadEmployees();
+            
+        } catch (IOException e) {
+            System.err.println("Loi khi xoa nhan vien: " + e.getMessage());
+        }
     }
 
     public Optional<Employee> findById(String id) {
@@ -124,10 +166,68 @@ public class EmployeeService {
     }
 
     public List<Employee> findByName(String name) {
-        loadEmployees();
-        return employees.stream()
-                .filter(e -> e.getName().toLowerCase().contains(name.toLowerCase()))
-                .toList();
+        List<Employee> results = new ArrayList<>();
+        if (name == null || name.trim().isEmpty()) {
+            return results;
+        }
+
+        String searchName = name.trim().toLowerCase();
+        
+        try {
+            List<String> lines = fileHandler.readAllLines(FILENAME);
+            for (String line : lines) {
+                // Bỏ qua các dòng header và phân cách
+                if (line.startsWith("=====") || line.startsWith("----") || line.trim().isEmpty()) {
+                    continue;
+                }
+                
+                if (line.contains("Employee [")) {
+                    String employeeInfo = line.substring(line.indexOf("[") + 1, line.indexOf("]"));
+                    String[] parts = employeeInfo.split(",");
+                    
+                    String id = "";
+                    String employeeName = "";
+                    String phone = "";
+                    String address = "";
+                    String position = "";
+                    double basicSalary = 0;
+                    
+                    for (String part : parts) {
+                        part = part.trim();
+                        if (part.startsWith("ID:")) {
+                            id = part.substring(part.indexOf(":") + 1).trim();
+                        } else if (part.startsWith("Name:")) {
+                            employeeName = part.substring(part.indexOf(":") + 1).trim();
+                        } else if (part.startsWith("Phone:")) {
+                            phone = part.substring(part.indexOf(":") + 1).trim();
+                        } else if (part.startsWith("Address:")) {
+                            address = part.substring(part.indexOf(":") + 1).trim();
+                        } else if (part.startsWith("Position:")) {
+                            position = part.substring(part.indexOf(":") + 1).trim();
+                        } else if (part.startsWith("Basic Salary:")) {
+                            String salaryStr = part.substring(part.indexOf(":") + 1).trim()
+                                .replace(",", "").replace("VND", "").trim();
+                            try {
+                                basicSalary = Double.parseDouble(salaryStr);
+                            } catch (NumberFormatException e) {
+                                basicSalary = 0;
+                            }
+                        }
+                    }
+                    
+                    // Kiểm tra nếu tên nhân viên chứa từ khóa tìm kiếm
+                    if (!employeeName.isEmpty() && 
+                        employeeName.toLowerCase().contains(searchName)) {
+                        Employee employee = new Employee(id, employeeName, phone, address, position, basicSalary);
+                        results.add(employee);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Loi khi doc file nhan vien: " + e.getMessage());
+        }
+        
+        return results;
     }
 
     public double calculateTotalSales(String employeeId) {
