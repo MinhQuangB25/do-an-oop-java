@@ -29,9 +29,5 @@ public class Computer extends Product {
                            cpu, ram, hardDrive);
     }
 
-    @Override
-    public double calculateDiscount() {
-        // Computers get 10% discount if quantity > 5
-        return getQuantity() > 5 ? 10.0 : 0.0;
-    }
+   
 } 

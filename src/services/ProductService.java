@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
 
 public class ProductService {
     private List<Product> products;

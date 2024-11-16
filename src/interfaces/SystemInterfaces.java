@@ -3,13 +3,7 @@ package interfaces;
 import java.util.List;
 
 public interface SystemInterfaces {
-    // Interface cho việc áp dụng giảm giá
-    interface Discountable {
-        double calculateDiscount();
-        void applyDiscount(double discountPercent);
-    }
-
-    // Interface cho việc lưu trữ và đọc file
+    //Interface cho việc lưu trữ và đọc file
     interface Storable<T> {
         void saveToFile(String filename, List<T> data);
         List<T> loadFromFile(String filename);

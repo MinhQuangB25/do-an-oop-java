@@ -10,9 +10,9 @@ import java.util.List;
 import java.util.Optional;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.text.ParseException;
+//import java.text.ParseException;
 import java.util.Date;
-import java.util.stream.Collectors;
+//import java.util.stream.Collectors;
 
 public class InvoiceService {
     private List<Invoice> invoices;
@@ -21,7 +21,7 @@ public class InvoiceService {
     private EmployeeService employeeService;
     private ProductService productService;
     private static final String FILENAME = "invoices.txt";
-    private String productId;
+    //private String productId;
 
     public InvoiceService(CustomerService customerService, EmployeeService employeeService, ProductService productService) {
         this.customerService = customerService;

@@ -12,7 +12,6 @@ public class Customer implements Identifiable, Printable, Serializable {
     private String address;
     private String phone;
     private List<Invoice> invoices;
-    private double totalPurchases;
 
     public Customer(String id, String name, String address, String phone) {
         this.id = id;
@@ -20,7 +19,6 @@ public class Customer implements Identifiable, Printable, Serializable {
         this.address = address;
         this.phone = phone;
         this.invoices = new ArrayList<>();
-        this.totalPurchases = 0.0;
     }
 
     // Getters and Setters
@@ -37,34 +35,21 @@ public class Customer implements Identifiable, Printable, Serializable {
         return invoices;
     }
 
-    public double getTotalPurchases() {
-        return totalPurchases;
-    }
-
     public void addInvoice(Invoice invoice) {
         if (invoices == null) {
             invoices = new ArrayList<>();
         }
         invoices.add(invoice);
-        totalPurchases += invoice.getTotalAmount();
-    }
-
-    public String getCustomerRank() {
-        if (totalPurchases >= 100000000) return "VIP";
-        if (totalPurchases >= 50000000) return "Gold";
-        if (totalPurchases >= 20000000) return "Silver";
-        return "Normal";
     }
 
     @Override
     public String getInfo() {
-        return String.format("Customer [ID: %s, Name: %s, Address: %s, Phone: %s, Rank: %s]",
-                           id, name, address, phone, getCustomerRank());
+        return String.format("Customer [ID: %s, Name: %s, Address: %s, Phone: %s]",
+                           id, name, address, phone);
     }
 
     @Override
     public void display() {
         System.out.println(getInfo());
-        System.out.printf("Tong gia tri da mua: %,.0f VND%n", totalPurchases);
     }
 } 

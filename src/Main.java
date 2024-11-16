@@ -1,11 +1,11 @@
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 import models.*;
 import services.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.text.ParseException;
 
 public class Main {
     private static Scanner scanner = new Scanner(System.in);
@@ -106,11 +106,16 @@ public class Main {
 
     private static void searchProducts() {
         System.out.println("\n=== TIM KIEM SAN PHAM ===");
-        System.out.println("1. Tim theo ten");
+        
+        // Hiển thị danh sách sản phẩm trước khi tìm kiếm
+        System.out.println("\nDanh sach san pham hien co:");
+        productService.displayProductsFromFile();
+        
+        System.out.println("\n1. Tim theo ten");
         System.out.println("2. Tim theo ma");
         System.out.println("0. Quay lai");
         
-        int choice = getIntInput("Nhap lua chon: ");
+        int choice = getIntInput("\nNhap lua chon: ");
         switch (choice) {
             case 1 -> {
                 String keyword = getStringInput("Nhap ten san pham can tim: ");
@@ -143,7 +148,12 @@ public class Main {
 
     private static void updateProduct() {
         System.out.println("\n=== CAP NHAT SAN PHAM ===");
-        String id = getStringInput("Nhap ma san pham can cap nhat: ");
+        
+        // Hiển thị danh sách sản phẩm trước khi yêu cầu nhập mã
+        System.out.println("\nDanh sach san pham hien co:");
+        productService.displayProductsFromFile();
+        
+        String id = getStringInput("\nNhap ma san pham can cap nhat: ");
         Optional<Product> productOpt = productService.findById(id);
         
         if (productOpt.isEmpty()) {
@@ -189,7 +199,12 @@ public class Main {
 
     private static void deleteProduct() {
         System.out.println("\n=== XOA SAN PHAM ===");
-        String id = getStringInput("Nhap ma san pham can xoa: ");
+        
+        // Hiển thị danh sách sản phẩm trước khi yêu cầu nhập mã
+        System.out.println("\nDanh sach san pham hien co:");
+        productService.displayProductsFromFile();
+        
+        String id = getStringInput("\nNhap ma san pham can xoa: ");
         
         Optional<Product> product = productService.findById(id);
         if (product.isPresent()) {
@@ -211,22 +226,20 @@ public class Main {
     private static void manageCustomers() {
         while (true) {
             System.out.println("\n===== QUAN LY KHACH HANG =====");
-            System.out.println("1. Them khach hang");
-            System.out.println("2. Xem danh sach khach hang");
-            System.out.println("3. Tim kiem khach hang");
-            System.out.println("4. Cap nhat khach hang");
-            System.out.println("5. Xoa khach hang");
-            System.out.println("6. Mua hang");
+            System.out.println("1. Xem danh sach khach hang");
+            System.out.println("2. Tim kiem khach hang");
+            System.out.println("3. Cap nhat khach hang");
+            System.out.println("4. Xoa khach hang");
+            System.out.println("5. Mua hang");
             System.out.println("0. Quay lai");
 
             int choice = getIntInput("Nhap lua chon: ");
             switch (choice) {
-                case 1 -> addCustomer();
-                case 2 -> displayCustomers();
-                case 3 -> searchCustomers();
-                case 4 -> updateCustomer();
-                case 5 -> deleteCustomer();
-                case 6 -> customerPurchase();
+                case 1 -> displayCustomers();
+                case 2 -> searchCustomers();
+                case 3 -> updateCustomer();
+                case 4 -> deleteCustomer();
+                case 5 -> customerPurchase();
                 case 0 -> { return; }
                 default -> System.out.println("Lua chon khong hop le!");
             }
@@ -372,10 +385,14 @@ public class Main {
             return;
         }
         
+        // Hiển thị danh sách khách hàng trước khi nhập mã
+        System.out.println("\nDanh sach khach hang:");
+        customerService.displayCustomersFromFile();
+        
         // Chọn khách hàng
         Customer customer = null;
         while (customer == null) {
-            String customerId = getStringInput("Nhap ma khach hang (Enter de them khach hang moi): ");
+            String customerId = getStringInput("\nNhap ma khach hang (Enter de them khach hang moi): ");
             if (customerId.isEmpty()) {
                 System.out.println("\n=== THEM KHACH HANG MOI ===");
                 addCustomer();
@@ -390,6 +407,10 @@ public class Main {
             customer = customerOpt.get();
         }
 
+        // Hiển thị danh sách nhân viên trước khi nhập mã
+        System.out.println("\nDanh sach nhan vien:");
+        employeeService.displayEmployeesFromFile();
+        
         // Chọn nhân viên bán hàng
         Employee employee = null;
         while (employee == null) {
@@ -406,14 +427,14 @@ public class Main {
         String invoiceId = generateInvoiceId();
         Invoice invoice = new Invoice(invoiceId, customer, employee);
 
-        // Hiển thị danh sách sản phẩm
-        System.out.println("\nDanh sach san pham hien co:");
-        productService.displayProductsFromFile();
-
         // Thêm sản phẩm vào hóa đơn
         boolean hasAddedItems = false;
         while (true) {
             try {
+                // Hiển thị danh sách sản phẩm trước khi nhập mã
+                System.out.println("\nDanh sach san pham hien co:");
+                productService.displayProductsFromFile();
+                
                 System.out.println("\nThem san pham vao gio hang (nhap ma san pham trong de ket thuc):");
                 String productId = getStringInput("Nhap ma san pham: ");
                 if (productId.isEmpty()) {
@@ -534,6 +555,10 @@ public class Main {
                 System.out.println("Ma nhan vien khong duoc de trong!");
                 continue;
             }
+            if (!id.matches("NV\\d{3}")) {
+                System.out.println("Ma nhan vien phai co dang NVxxx (x la so)!");
+                continue;
+            }
             if (employeeService.findById(id).isPresent()) {
                 System.out.println("Ma nhan vien da ton tai!");
                 continue;
@@ -552,34 +577,48 @@ public class Main {
             break;
         }
 
-        // Kiểm tra và nhập vị trí
-        String position;
+        // Kiểm tra và nhập số điện thoại
+        String phone;
         while (true) {
-            position = getStringInput("Nhap vi tri/chuc vu: ");
-            if (position.isEmpty()) {
-                System.out.println("Vi tri/chuc vu khong duoc de trong!");
+            phone = getStringInput("Nhap so dien thoai (Enter de bo qua): ");
+            if (phone.isEmpty()) {
+                phone = ""; // Giá trị mặc định nếu bỏ qua
+                break;
+            }
+            if (!phone.matches("\\d{10,11}")) {
+                System.out.println("So dien thoai khong hop le (can 10-11 so)!");
                 continue;
             }
             break;
         }
 
-        // Kiểm tra và nhập lương
+        // Kiểm tra và nhập địa chỉ
+        String address = getStringInput("Nhap dia chi (Enter de bo qua): ");
+
+        // Kiểm tra và nhập vị trí
+        String position;
+        while (true) {
+            position = getStringInput("Nhap vi tri/chuc vu: ");
+            if (position.isEmpty() || position.equalsIgnoreCase("N/A")) {
+                System.out.println("Vi tri/chuc vu khong duoc de trong hoac la N/A!");
+                continue;
+            }
+            break;
+        }
+
+        // Kiểm tra và nhập lương cơ bản
         double basicSalary;
         while (true) {
-            try {
-                basicSalary = getDoubleInput("Nhap luong co ban: ");
-                if (basicSalary <= 0) {
-                    System.out.println("Luong co ban phai lon hon 0!");
-                    continue;
-                }
-                break;
-            } catch (NumberFormatException e) {
-                System.out.println("Luong khong hop le!");
+            basicSalary = getDoubleInput("Nhap luong co ban: ");
+            if (basicSalary <= 0) {
+                System.out.println("Luong co ban phai lon hon 0!");
+                continue;
             }
+            break;
         }
 
         try {
-            Employee employee = new Employee(id, name, position, basicSalary);
+            Employee employee = new Employee(id, name, phone, address, position, basicSalary);
             employeeService.addEmployee(employee);
             System.out.println("Them nhan vien thanh cong!");
             System.out.println("\nThong tin nhan vien vua them:");
@@ -607,7 +646,12 @@ public class Main {
 
     private static void updateEmployee() {
         System.out.println("\n=== CAP NHAT NHAN VIEN ===");
-        String id = getStringInput("Nhap ma nhan vien can cap nhat: ");
+        
+        // Hiển thị danh sách nhân viên trước khi yêu cầu nhập mã
+        System.out.println("\nDanh sach nhan vien hien co:");
+        employeeService.displayEmployeesFromFile();
+        
+        String id = getStringInput("\nNhap ma nhan vien can cap nhat: ");
         Optional<Employee> employeeOpt = employeeService.findById(id);
         
         if (employeeOpt.isEmpty()) {
@@ -622,11 +666,28 @@ public class Main {
         String name = getStringInput("Nhap ten moi (Enter de giu nguyen): ");
         if (!name.isEmpty()) employee.setName(name);
 
-        String position = getStringInput("Nhap chuc vu moi (Enter de giu nguyen): ");
+        String phone = getStringInput("Nhap so dien thoai moi (Enter de giu nguyen): ");
+        if (!phone.isEmpty()) employee.setPhone(phone);
+
+        String address = getStringInput("Nhap dia chi moi (Enter de giu nguyen): ");
+        if (!address.isEmpty()) employee.setAddress(address);
+
+        String position = getStringInput("Nhap vi tri moi (Enter de giu nguyen): ");
         if (!position.isEmpty()) employee.setPosition(position);
 
         String salaryStr = getStringInput("Nhap luong co ban moi (Enter de giu nguyen): ");
-        if (!salaryStr.isEmpty()) employee.setBasicSalary(Double.parseDouble(salaryStr));
+        if (!salaryStr.isEmpty()) {
+            try {
+                double salary = Double.parseDouble(salaryStr);
+                if (salary > 0) {
+                    employee.setBasicSalary(salary);
+                } else {
+                    System.out.println("Luong phai lon hon 0!");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Luong khong hop le!");
+            }
+        }
 
         employeeService.updateEmployee(employee);
         System.out.println("Cap nhat nhan vien thanh cong!");
@@ -634,7 +695,12 @@ public class Main {
 
     private static void deleteEmployee() {
         System.out.println("\n=== XOA NHAN VIEN ===");
-        String id = getStringInput("Nhap ma nhan vien can xoa: ");
+        
+        // Hiển thị danh sách nhân viên trước khi yêu cầu nhập mã
+        System.out.println("\nDanh sach nhan vien hien co:");
+        employeeService.displayEmployeesFromFile();
+        
+        String id = getStringInput("\nNhap ma nhan vien can xoa: ");
         Optional<Employee> employeeOpt = employeeService.findById(id);
         
         if (employeeOpt.isEmpty()) {
@@ -642,8 +708,17 @@ public class Main {
             return;
         }
 
-        employeeService.deleteEmployee(id);
-        System.out.println("Xoa nhan vien thanh cong!");
+        // Hiển thị thông tin nhân viên sẽ xóa và yêu cầu xác nhận
+        System.out.println("Nhan vien can xoa:");
+        employeeOpt.get().display();
+        
+        String confirm = getStringInput("Ban co chac chan muon xoa? (Y/N): ");
+        if (confirm.equalsIgnoreCase("Y")) {
+            employeeService.deleteEmployee(id);
+            System.out.println("Xoa nhan vien thanh cong!");
+        } else {
+            System.out.println("Huy xoa nhan vien!");
+        }
     }
 
     private static void viewEmployeeSales() {
@@ -662,25 +737,23 @@ public class Main {
         System.out.println("\nThong tin doanh so:");
         System.out.println("----------------------------------------");
         System.out.printf("Nhan vien: %s (ID: %s)\n", employee.getName(), employee.getId());
-        System.out.printf("Tong doanh so: %,.0fđ\n", totalSales);
+        System.out.printf("Tong doanh so: %,.0f VND\n", totalSales);
         System.out.println("----------------------------------------");
     }
 
     private static void manageInvoices() {
         while (true) {
             System.out.println("\n===== QUAN LY HOA DON =====");
-            System.out.println("1. Tao hoa don moi");
-            System.out.println("2. Xem danh sach hoa don");
-            System.out.println("3. Tim kiem hoa don theo ma");
-            System.out.println("4. Tim kiem hoa don theo ngay");
+            System.out.println("1. Xem danh sach hoa don");
+            System.out.println("2. Tim kiem hoa don theo ma");
+            System.out.println("3. Tim kiem hoa don theo ngay");
             System.out.println("0. Quay lai");
 
             int choice = getIntInput("Nhap lua chon: ");
             switch (choice) {
-                case 1 -> customerPurchase();
-                case 2 -> displayInvoices();
-                case 3 -> findInvoiceById();
-                case 4 -> findInvoiceByDate();
+                case 1 -> displayInvoices();
+                case 2 -> findInvoiceById();
+                case 3 -> findInvoiceByDate();
                 case 0 -> { return; }
                 default -> System.out.println("Lua chon khong hop le!");
             }
@@ -733,7 +806,12 @@ public class Main {
 
     private static void findInvoiceById() {
         System.out.println("\n=== TIM HOA DON THEO MA ===");
-        String id = getStringInput("Nhap ma hoa don: ");
+        
+        // Hiển thị danh sách hóa đơn trước khi yêu cầu nhập mã
+        System.out.println("\nDanh sach hoa don hien co:");
+        invoiceService.displayInvoicesFromFile();
+        
+        String id = getStringInput("\nNhap ma hoa don can tim: ");
         Optional<Invoice> invoiceOpt = invoiceService.findById(id);
         
         if (invoiceOpt.isEmpty()) {
@@ -741,7 +819,8 @@ public class Main {
             return;
         }
         
-        System.out.println("Chi tiet hoa don:");
+        System.out.println("\nChi tiet hoa don:");
+        System.out.println("----------------------------------------");
         invoiceOpt.get().display();
     }
 

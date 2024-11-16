@@ -1,18 +1,31 @@
+
 ----------------------------------------
-Employee [ID: NV006, Name: Quan, Position: Sales, Basic Salary: 700,000]
+Employee [ID: NV006, Name: Quan, Phone: 0123456789, Address: Ha Noi, Position: Sales, Basic Salary: 700,000]
+----------------------------------------
+Employee [ID: NV005, Name: Thanh, Phone: 0987654321, Address: Ho Chi Minh, Position: Sales, Basic Salary: 80,000,000]
+----------------------------------------
+Employee [ID: KH010, Name: Ngan, Phone: 0909090909, Address: Da Nang, Position: N/A, Basic Salary: 2,000,000]
+----------------------------------------
+Employee [ID: NV001, Name: Hao, Phone: 0777777777, Address: Can Tho, Position: N/A, Basic Salary: 200,000]
+----------------------------------------
+Employee [ID: NV002, Name: Dung, Phone: 0888888888, Address: Hue, Position: N/A, Basic Salary: 6,000,000]
+----------------------------------------
+Employee [ID: NV003, Name: BINH, Phone: 0999999999, Address: Nha Trang, Position: N/A, Basic Salary: 400,000]
+----------------------------------------
+Employee [ID: NV004, Name: Huy, Phone: 0666666666, Address: Vung Tau, Position: N/A, Basic Salary: 4,000,000,000]
+----------------------------------------
+Employee [ID: NV010, Name: Tien An, Phone: 0555555555, Address: Quy Nhon, Position: N/A, Basic Salary: 100,000]
+----------------------------------------
+Employee [ID: NV009, Name: Bap, Phone: 0444444444, Address: Phan Thiet, Position: N/A, Basic Salary: 1,000,000,000]
+----------------------------------------
+Employee [ID: NV011, Name: Bui, Phone: 0333333333, Address: Da Lat, Position: N/A, Basic Salary: 2,000,000,000]
 ----------------------------------------
 ----------------------------------------
-Employee [ID: NV005, Name: Thanh, Position: Sales, Basic Salary: 80,000,000]
+Employee [ID: NV012, Name: phuc, Phone: , Address: , Position: Sales, Basic Salary: 30,000]
 ----------------------------------------
 ----------------------------------------
-Employee [ID: KH010, Name: Ngan, Position: , Basic Salary: 2,000,000]
+Employee [ID: NV013, Name: Bao, Phone: , Address: , Position: Sales, Basic Salary: 30,000,000]
 ----------------------------------------
 ----------------------------------------
-Employee [ID: NV001, Name: Hao, Position: N/A, Basic Salary: 200,000]
-----------------------------------------
-----------------------------------------
-Employee [ID: NV002, Name: Dung, Position: , Basic Salary: 6,000,000]
-----------------------------------------
-----------------------------------------
-Employee [ID: NV003, Name: BINH, Position: N/A, Basic Salary: 400,000]
+Employee [ID: NV014, Name: Tai, Phone: 0899885663, Address: TPHCM, Position: Sales, Basic Salary: 20,000,000]
 ----------------------------------------

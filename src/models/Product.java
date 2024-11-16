@@ -2,10 +2,9 @@ package models;
 
 import interfaces.SystemInterfaces.Identifiable;
 import interfaces.SystemInterfaces.Printable;
-import interfaces.SystemInterfaces.Discountable;
 import java.io.Serializable;
 
-public abstract class Product implements Identifiable, Printable, Discountable, Serializable {
+public abstract class Product implements Identifiable, Printable, Serializable {
     private String id;
     private String name;
     private double price;
@@ -31,17 +30,6 @@ public abstract class Product implements Identifiable, Printable, Discountable, 
 
     // Abstract method
     public abstract String getInfo();
-
-    // Implement Discountable
-    @Override
-    public double calculateDiscount() {
-        return 0.0; // Default implementation
-    }
-
-    @Override
-    public void applyDiscount(double discountPercent) {
-        this.price = price * (1 - discountPercent/100);
-    }
 
     // Implement Printable
     @Override

@@ -35,6 +35,7 @@ public class EmployeeService {
         String position = employee.getPosition();
         if (position == null || position.trim().isEmpty()) {
             position = "N/A"; // Giá trị mặc định nếu position trống
+            employee.setPosition(position);
         }
         
         // Tao format dung cho nhan vien moi
@@ -85,7 +86,6 @@ public class EmployeeService {
                 }
                 
                 if (line.contains("Employee [")) {
-                    // Format: Employee [ID: NV001, Name: Nguyen Van A, Position: Sales, Basic Salary: 1000000]
                     String employeeInfo = line.substring(line.indexOf("[") + 1, line.indexOf("]"));
                     String[] parts = employeeInfo.split(",");
                     
@@ -111,7 +111,7 @@ public class EmployeeService {
                     }
                     
                     if (employeeId.equals(id)) {
-                        Employee employee = new Employee(employeeId, name, position, basicSalary);
+                        Employee employee = new Employee(employeeId, name, "", "", position, basicSalary);
                         return Optional.of(employee);
                     }
                 }

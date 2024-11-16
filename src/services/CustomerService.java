@@ -73,7 +73,7 @@ public class CustomerService {
                     if (currentId.equals(customer.getId())) {
                         found = true;
                         // Tạo dòng mới với thông tin đã cập nhật
-                        String updatedLine = String.format("Customer [ID: %s, Name: %s, Address: %s, Phone: %s, Rank: %s]",
+                        String updatedLine = String.format("Customer [ID: %s, Name: %s, Address: %s, Phone: %s]",
                             customer.getId(),
                             customer.getName(),
                             customer.getAddress(),
@@ -119,7 +119,6 @@ public class CustomerService {
                     String customerName = "";
                     String address = "";
                     String phone = "";
-                    String rank = "Normal";
                     
                     for (String part : parts) {
                         part = part.trim();
@@ -131,8 +130,6 @@ public class CustomerService {
                             address = part.substring(part.indexOf(":") + 1).trim();
                         } else if (part.startsWith("Phone:")) {
                             phone = part.substring(part.indexOf(":") + 1).trim();
-                        } else if (part.startsWith("Rank:")) {
-                            rank = part.substring(part.indexOf(":") + 1).trim();
                         }
                     }
                     
@@ -175,7 +172,6 @@ public class CustomerService {
                     String customerName = "";
                     String address = "";
                     String phone = "";
-                    String rank = "Normal";
                     
                     for (String part : parts) {
                         part = part.trim();
@@ -187,8 +183,6 @@ public class CustomerService {
                             address = part.substring(part.indexOf(":") + 1).trim();
                         } else if (part.startsWith("Phone:")) {
                             phone = part.substring(part.indexOf(":") + 1).trim();
-                        } else if (part.startsWith("Rank:")) {
-                            rank = part.substring(part.indexOf(":") + 1).trim();
                         }
                     }
                     

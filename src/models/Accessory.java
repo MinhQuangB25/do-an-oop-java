@@ -17,9 +17,5 @@ public class Accessory extends Product {
                            getId(), getName(), getPrice(), getQuantity(), type);
     }
 
-    @Override
-    public double calculateDiscount() {
-        // Accessories get 5% discount if quantity > 10
-        return getQuantity() > 10 ? 5.0 : 0.0;
-    }
+   
 } 

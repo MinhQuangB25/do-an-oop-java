@@ -15,35 +15,13 @@ public class Employee implements Identifiable, Printable, Serializable {
     private double basicSalary;
     private List<Invoice> invoices;
 
-    // Constructor cơ bản
-    public Employee(String id, String name, String phone, String address) {
-        this.id = id;
-        this.name = name;
-        this.phone = phone;
-        this.address = address;
-        this.position = "";
-        this.basicSalary = 0.0;
-        this.invoices = new ArrayList<>();
-    }
-
-    // Constructor với position và basicSalary
+    // Constructor duy nhất với các tham số tùy chọn
     public Employee(String id, String name, String phone, String address, String position, double basicSalary) {
         this.id = id;
         this.name = name;
-        this.phone = phone;
-        this.address = address;
-        this.position = position;
-        this.basicSalary = basicSalary;
-        this.invoices = new ArrayList<>();
-    }
-
-    // Constructor với 4 tham số (String, String, String, double) - để fix lỗi trong Main.java
-    public Employee(String id, String name, String phone, double basicSalary) {
-        this.id = id;
-        this.name = name;
-        this.phone = phone;
-        this.address = "";
-        this.position = "";
+        this.phone = phone != null ? phone : "";
+        this.address = address != null ? address : "";
+        this.position = position != null ? position : "";
         this.basicSalary = basicSalary;
         this.invoices = new ArrayList<>();
     }
@@ -70,8 +48,9 @@ public class Employee implements Identifiable, Printable, Serializable {
 
     @Override
     public void display() {
-        System.out.println(getInfo());
-        System.out.printf("Luong co ban: %,.0f VND%n", basicSalary);
+        System.out.printf("Nhan vien [ID: %s, Ten: %s, SDT: %s, Dia chi: %s, Chuc vu: %s]\n",
+            id, name, phone, address, position);
+        System.out.printf("Luong co ban: %,.0f VND\n", basicSalary);
     }
 
     public void addSalesInvoice(Invoice invoice) {
