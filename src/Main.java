@@ -231,6 +231,7 @@ public class Main {
             System.out.println("3. Cap nhat khach hang");
             System.out.println("4. Xoa khach hang");
             System.out.println("5. Mua hang");
+            System.out.println("6. Xem lich su mua hang");
             System.out.println("0. Quay lai");
 
             int choice = getIntInput("Nhap lua chon: ");
@@ -240,6 +241,7 @@ public class Main {
                 case 3 -> updateCustomer();
                 case 4 -> deleteCustomer();
                 case 5 -> customerPurchase();
+                case 6 -> viewCustomerPurchaseHistory();
                 case 0 -> { return; }
                 default -> System.out.println("Lua chon khong hop le!");
             }
@@ -417,7 +419,7 @@ public class Main {
             String employeeId = getStringInput("\nNhap ma nhan vien ban hang: ");
             Optional<Employee> employeeOpt = employeeService.findById(employeeId);
             if (employeeOpt.isEmpty()) {
-                System.out.println("Không tìm thấy nhân viên! Vui lòng thử lại.");
+                System.out.println("Kh��ng tìm thấy nhân viên! Vui lòng thử lại.");
                 continue;
             }
             employee = employeeOpt.get();
@@ -858,5 +860,53 @@ public class Main {
         String datePart = sdf.format(new Date());
         int randomNum = (int) (Math.random() * 10000); // Random từ 0-9999
         return String.format("HD%s%04d", datePart, randomNum);
+    }
+
+    private static void viewCustomerPurchaseHistory() {
+        System.out.println("\n=== XEM LICH SU MUA HANG ===");
+        
+        // Hiển thị danh sách khách hàng
+        System.out.println("\nDanh sach khach hang:");
+        customerService.displayCustomersFromFile();
+        
+        String customerId = getStringInput("\nNhap ma khach hang can xem lich su: ");
+        Optional<Customer> customerOpt = customerService.findById(customerId);
+        
+        if (customerOpt.isEmpty()) {
+            System.out.println("Khong tim thay khach hang!");
+            return;
+        }
+
+        Customer customer = customerOpt.get();
+        System.out.println("\nLich su mua hang cua khach hang: " + customer.getName());
+        System.out.println("----------------------------------------");
+        
+        List<Invoice> history = invoiceService.getCustomerInvoices(customerId);
+        if (history.isEmpty()) {
+            System.out.println("Khach hang chua co don hang nao!");
+            return;
+        }
+
+        double totalSpent = 0;
+        for (Invoice invoice : history) {
+            System.out.printf("\nHoa don: %s - Ngay: %s\n", 
+                invoice.getId(),
+                new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(invoice.getDate()));
+            System.out.println("Nhan vien ban hang: " + invoice.getEmployee().getName());
+            System.out.println("Chi tiet san pham:");
+            
+            for (Invoice.InvoiceDetail detail : invoice.getItems()) {
+                System.out.printf("- %s x%d: %,d VND\n",
+                    detail.getProduct().getName(),
+                    detail.getQuantity(),
+                    (int)(detail.getProduct().getPrice() * detail.getQuantity()));
+            }
+            
+            System.out.printf("Tong tien: %,d VND\n", (int)invoice.getTotalAmount());
+            totalSpent += invoice.getTotalAmount();
+            System.out.println("----------------------------------------");
+        }
+        
+        System.out.printf("\nTong chi tieu: %,d VND\n", (int)totalSpent);
     }
 } 

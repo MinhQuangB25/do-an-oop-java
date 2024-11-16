@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 //import java.text.ParseException;
 import java.util.Date;
-//import java.util.stream.Collectors;
+import java.util.stream.Collectors;
 
 public class InvoiceService {
     private List<Invoice> invoices;
@@ -286,6 +286,8 @@ public class InvoiceService {
             invoices = new ArrayList<>();
             
             Invoice currentInvoice = null;
+            boolean isReadingProducts = false;
+            
             for (String line : lines) {
                 if (line.trim().isEmpty() || line.startsWith("===") || line.startsWith("---")) {
                     continue;
@@ -296,18 +298,52 @@ public class InvoiceService {
                     if (currentInvoice != null) {
                         invoices.add(currentInvoice);
                     }
+                    isReadingProducts = false;
                 } else if (currentInvoice != null) {
                     if (line.startsWith("Khach hang:")) {
                         String[] parts = line.substring("Khach hang:".length()).trim().split("-");
                         if (parts.length > 0) {
                             String customerId = parts[0].trim();
-                            customerService.findById(customerId).ifPresent(currentInvoice::setCustomer);
+                            final Invoice invoice = currentInvoice;
+                            customerService.findById(customerId).ifPresent(invoice::setCustomer);
                         }
                     } else if (line.startsWith("Nhan vien:")) {
                         String[] parts = line.substring("Nhan vien:".length()).trim().split("-");
                         if (parts.length > 0) {
                             String employeeId = parts[0].trim();
-                            employeeService.findById(employeeId).ifPresent(currentInvoice::setEmployee);
+                            final Invoice invoice = currentInvoice;
+                            employeeService.findById(employeeId).ifPresent(invoice::setEmployee);
+                        }
+                    } else if (line.startsWith("Chi tiet san pham:")) {
+                        isReadingProducts = true;
+                    } else if (isReadingProducts && line.startsWith("-")) {
+                        // Parse thông tin sản phẩm
+                        String productInfo = line.substring(1).trim();
+                        int maIndex = productInfo.indexOf("(Ma:");
+                        int xIndex = productInfo.indexOf("x");
+                        int priceIndex = productInfo.lastIndexOf(":");
+                        
+                        if (maIndex > 0 && xIndex > 0 && priceIndex > 0) {
+                            String productId = productInfo.substring(maIndex + 4, productInfo.indexOf(")")).trim();
+                            int quantity = Integer.parseInt(productInfo.substring(xIndex + 1, priceIndex).trim());
+                            
+                            final Invoice invoice = currentInvoice;
+                            productService.findById(productId).ifPresent(product -> {
+                                invoice.addItem(product, quantity);
+                            });
+                        }
+                    } else if (line.startsWith("Tong tien:")) {
+                        // Parse tổng tiền nếu cần
+                        String amountStr = line.substring("Tong tien:".length())
+                            .trim()
+                            .replace("VND", "")
+                            .replace(",", "")
+                            .trim();
+                        try {
+                            double totalAmount = Double.parseDouble(amountStr);
+                            // Không cần set totalAmount vì nó được tính tự động từ items
+                        } catch (NumberFormatException e) {
+                            System.err.println("Lỗi khi parse số tiền: " + e.getMessage());
                         }
                     }
                 }
@@ -341,5 +377,14 @@ public class InvoiceService {
             System.err.println("Lỗi khi parse hóa đơn: " + e.getMessage());
             return null;
         }
+    }
+
+    public List<Invoice> getCustomerInvoices(String customerId) {
+        loadInvoices();
+        return invoices.stream()
+                .filter(invoice -> invoice.getCustomer() != null && 
+                                 invoice.getCustomer().getId().equals(customerId))
+                .sorted((i1, i2) -> i2.getDate().compareTo(i1.getDate())) // Sắp xếp theo ngày mới nhất
+                .collect(Collectors.toList());
     }
 } 
