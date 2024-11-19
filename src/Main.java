@@ -100,7 +100,6 @@ public class Main {
     }
 
     private static void displayProducts() {
-        System.out.println("\n=== DANH SACH SAN PHAM ===");
         productService.displayProductsFromFile();
     }
 
@@ -338,7 +337,12 @@ public class Main {
 
     private static void updateCustomer() {
         System.out.println("\n=== CAP NHAT KHACH HANG ===");
-        String id = getStringInput("Nhap ma khach hang can cap nhat: ");
+        
+        // Hiển thị danh sách khách hàng trước khi yêu cầu nhập mã
+        System.out.println("\nDanh sach khach hang hien co:");
+        customerService.displayCustomersFromFile();
+        
+        String id = getStringInput("\nNhap ma khach hang can cap nhat: ");
         Optional<Customer> customerOpt = customerService.findById(id);
         
         if (customerOpt.isEmpty()) {
@@ -365,7 +369,12 @@ public class Main {
 
     private static void deleteCustomer() {
         System.out.println("\n=== XOA KHACH HANG ===");
-        String id = getStringInput("Nhap ma khach hang can xoa: ");
+        
+        // Hiển thị danh sách khách hàng trước khi yêu cầu nhập mã
+        System.out.println("\nDanh sach khach hang hien co:");
+        customerService.displayCustomersFromFile();
+        
+        String id = getStringInput("\nNhap ma khach hang can xoa: ");
         Optional<Customer> customerOpt = customerService.findById(id);
         
         if (customerOpt.isEmpty()) {
@@ -373,8 +382,17 @@ public class Main {
             return;
         }
 
-        customerService.deleteCustomer(id);
-        System.out.println("Xoa khach hang thanh cong!");
+        // Hiển thị thông tin khách hàng sẽ xóa và yêu cầu xác nhận
+        System.out.println("Khach hang can xoa:");
+        customerOpt.get().display();
+        
+        String confirm = getStringInput("Ban co chac chan muon xoa? (Y/N): ");
+        if (confirm.equalsIgnoreCase("Y")) {
+            customerService.deleteCustomer(id);
+            System.out.println("Xoa khach hang thanh cong!");
+        } else {
+            System.out.println("Huy xoa khach hang!");
+        }
     }
 
     private static void customerPurchase() {
