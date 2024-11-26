@@ -9,21 +9,12 @@ import java.util.Date;
 import java.util.List;
 
 public class Invoice implements Identifiable, Printable, Serializable {
-    private String id;
-    private Date date;
+    private final String id;
+    private final Date date;
     private Customer customer;
     private Employee employee;
     private List<InvoiceDetail> items;
     private double totalAmount;
-
-    public Invoice(String id, Customer customer, Employee employee) {
-        this.id = id;
-        this.customer = customer;
-        this.employee = employee;
-        this.date = new Date();
-        this.items = new ArrayList<>();
-        this.totalAmount = 0.0;
-    }
 
     public Invoice(String id, Date date) {
         this.id = id;
@@ -31,27 +22,29 @@ public class Invoice implements Identifiable, Printable, Serializable {
         this.items = new ArrayList<>();
     }
 
-    // Getters and Setters
+    // Getters
     @Override
     public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    
+    @Override
+    public void setId(String id) {
+        // Không thực hiện gì vì id là final
+        throw new UnsupportedOperationException("Cannot change invoice ID after creation");
+    }
     
     public Date getDate() { return date; }
-    public void setDate(Date date) { this.date = date; }
-    
     public Customer getCustomer() { return customer; }
-    public void setCustomer(Customer customer) { this.customer = customer; }
-    
     public Employee getEmployee() { return employee; }
-    public void setEmployee(Employee employee) { this.employee = employee; }
-    
     public List<InvoiceDetail> getItems() { return items; }
+    public double getTotalAmount() { return totalAmount; }
+    
+    // Setters
+    public void setCustomer(Customer customer) { this.customer = customer; }
+    public void setEmployee(Employee employee) { this.employee = employee; }
     public void setItems(List<InvoiceDetail> items) { 
         this.items = items;
         calculateTotal();
     }
-
-    public double getTotalAmount() { return totalAmount; }
 
     public void addItem(Product product, int quantity) {
         items.add(new InvoiceDetail(product, quantity));
@@ -90,8 +83,8 @@ public class Invoice implements Identifiable, Printable, Serializable {
     }
 
     public static class InvoiceDetail implements Serializable {
-        private Product product;
-        private int quantity;
+        private final Product product;
+        private final int quantity;
 
         public InvoiceDetail(Product product, int quantity) {
             this.product = product;

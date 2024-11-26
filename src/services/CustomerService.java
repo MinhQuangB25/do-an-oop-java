@@ -201,6 +201,4 @@ public class CustomerService extends BaseService<Customer> {
             System.out.println("Da sua lai thong tin khach hang!");
         }
     }
-
-    // ... các phương thức đặc thù của CustomerService ...
 } 

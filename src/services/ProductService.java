@@ -17,11 +17,9 @@ import java.nio.file.Paths;
 
 public class ProductService extends BaseService<Product> {
     private static final String FILENAME = "products.txt";
-    private List<Product> products;
 
     public ProductService() {
         super(FILENAME);
-        products = new ArrayList<>();
         loadItems();
     }
 
@@ -29,7 +27,6 @@ public class ProductService extends BaseService<Product> {
     protected void loadItems() {
         try {
             List<String> lines = fileHandler.readAllLines(filename);
-            products = new ArrayList<>();
             items = new ArrayList<>();
             
             for (String line : lines) {
@@ -45,13 +42,11 @@ public class ProductService extends BaseService<Product> {
                 }
                 
                 if (product != null) {
-                    products.add(product);
                     items.add(product);
                 }
             }
         } catch (IOException e) {
             System.err.println("Loi khi doc file san pham: " + e.getMessage());
-            products = new ArrayList<>();
             items = new ArrayList<>();
         }
     }
@@ -59,7 +54,7 @@ public class ProductService extends BaseService<Product> {
     @Override
     public Optional<Product> findById(String id) {
         loadItems();
-        return products.stream()
+        return items.stream()
             .filter(p -> p.getId().equals(id))
             .findFirst();
     }
@@ -83,23 +78,21 @@ public class ProductService extends BaseService<Product> {
             return;
         }
         
-        products.add(product);
-        items = new ArrayList<>(products);
+        items.add(product);
         fileHandler.saveToFile(FILENAME, List.of(product));
         System.out.println("Thêm sản phẩm thành công!");
     }
 
     public void updateProduct(Product product) {
-        for (int i = 0; i < products.size(); i++) {
-            if (products.get(i).getId().equals(product.getId())) {
-                products.set(i, product);
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).getId().equals(product.getId())) {
+                items.set(i, product);
                 break;
             }
         }
-        items = new ArrayList<>(products);
 
         fileHandler.setUpdatingFile(true);
-        fileHandler.saveToFile(FILENAME, products);
+        fileHandler.saveToFile(FILENAME, items);
         fileHandler.setUpdatingFile(false);
     }
 
@@ -138,9 +131,9 @@ public class ProductService extends BaseService<Product> {
             
             product.setQuantity(currentQuantity - quantity);
             
-            for (int i = 0; i < products.size(); i++) {
-                if (products.get(i).getId().equals(productId)) {
-                    products.get(i).setQuantity(currentQuantity - quantity);
+            for (int i = 0; i < items.size(); i++) {
+                if (items.get(i).getId().equals(productId)) {
+                    items.get(i).setQuantity(currentQuantity - quantity);
                     break;
                 }
             }
@@ -204,49 +197,32 @@ public class ProductService extends BaseService<Product> {
     }
 
     public List<Product> findByName(String name) {
-        return products.stream()
+        return items.stream()
                 .filter(p -> p.getName().toLowerCase().contains(name.toLowerCase()))
                 .collect(Collectors.toList());
     }
 
     public void deleteProduct(String id) {
-        products.removeIf(p -> p.getId().equals(id));
+        items.removeIf(p -> p.getId().equals(id));
         fileHandler.setUpdatingFile(true);
-        fileHandler.saveToFile(FILENAME, products);
+        fileHandler.saveToFile(FILENAME, items);
         fileHandler.setUpdatingFile(false);
     }
 
     public List<Product> getAllProducts() {
         loadItems();
-        return new ArrayList<>(products);
+        return new ArrayList<>(items);
     }
 
     public void displayProductsFromFile() {
-        System.out.println("\n=== DANH SACH SAN PHAM ===");
-        List<Product> computers = products.stream()
-                .filter(p -> p instanceof Computer)
-                .collect(Collectors.toList());
-        
-        List<Product> accessories = products.stream()
-                .filter(p -> p instanceof Accessory)
-                .collect(Collectors.toList());
-
-        if (!computers.isEmpty()) {
-            System.out.println("\n===== COMPUTERS =====");
-            computers.forEach(p -> {
-                System.out.println("----------------------------------------");
-                System.out.println(p.getInfo());
-            });
+        try {
+            List<String> lines = fileHandler.readAllLines(filename);
+            for (String line : lines) {
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            System.err.println("Loi khi doc file san pham: " + e.getMessage());
         }
-
-        if (!accessories.isEmpty()) {
-            System.out.println("\n===== ACCESSORIES =====");
-            accessories.forEach(p -> {
-                System.out.println("----------------------------------------");
-                System.out.println(p.getInfo());
-            });
-        }
-        System.out.println("----------------------------------------");
     }
 
     public void addComputer(String id, String name, double price, int quantity, 
@@ -304,26 +280,28 @@ public class ProductService extends BaseService<Product> {
     }
 
     public void deleteProductById(String id) {
-        if (id == null || id.trim().isEmpty()) {
-            throw new IllegalArgumentException("Ma san pham khong duoc de trong!");
-        }
-
-        Optional<Product> product = findById(id);
-        if (product.isEmpty()) {
-            throw new IllegalArgumentException("Khong tim thay san pham!");
-        }
-
         try {
+            // Load danh sách sản phẩm hiện tại
+            loadItems();
+            
+            // Kiểm tra sản phẩm tồn tại
+            if (findById(id).isEmpty()) {
+                throw new IllegalArgumentException("Khong tim thay san pham!");
+            }
+
+            // Đọc toàn bộ nội dung file
             List<String> lines = fileHandler.readAllLines(filename);
             List<String> newLines = new ArrayList<>();
             boolean skipProduct = false;
 
             for (String line : lines) {
+                // Nếu là header hoặc dòng trống, thêm vào bình thường
                 if (line.startsWith("=====") || line.isEmpty()) {
                     newLines.add(line);
                     continue;
                 }
                 
+                // Nếu là dòng phân cách và đang skip sản phẩm, bỏ qua
                 if (line.startsWith("----")) {
                     if (!skipProduct) {
                         newLines.add(line);
@@ -332,22 +310,28 @@ public class ProductService extends BaseService<Product> {
                     continue;
                 }
 
-                if (line.contains("ID: " + id)) {
+                // Nếu tìm thấy sản phẩm cần xóa, bắt đầu skip
+                if (line.contains("ID: " + id + ",")) {
                     skipProduct = true;
                     continue;
                 }
 
+                // Nếu không phải dòng cần skip, thêm vào danh sách mới
                 if (!skipProduct) {
                     newLines.add(line);
                 }
             }
 
+            // Ghi lại file với nội dung mới
+            fileHandler.setUpdatingFile(true);
             Files.write(Paths.get(fileHandler.getDirectory() + filename), newLines);
+            fileHandler.setUpdatingFile(false);
             
-            products.removeIf(p -> p.getId().equals(id));
-            items = new ArrayList<>(products);
+            // Cập nhật danh sách items
+            loadItems();
             
             System.out.println("Xoa san pham thanh cong!");
+            
         } catch (IOException e) {
             System.err.println("Loi khi xoa san pham: " + e.getMessage());
             throw new RuntimeException("Xoa san pham that bai!", e);
@@ -359,23 +343,49 @@ public class ProductService extends BaseService<Product> {
             throw new IllegalArgumentException("Tu khoa tim kiem khong duoc de trong!");
         }
 
-        loadItems();
         final String keyword = searchKeyword.toLowerCase().trim();
+        List<Product> results = new ArrayList<>();
         
-        List<Product> results = products.stream()
-            .filter(product -> 
-                product.getId().toLowerCase().contains(keyword) ||
-                product.getName().toLowerCase().contains(keyword))
-            .collect(Collectors.toList());
+        try {
+            List<String> lines = fileHandler.readAllLines(filename);
+            for (String line : lines) {
+                if (line.trim().isEmpty() || line.startsWith("=====") || line.startsWith("---")) {
+                    continue;
+                }
 
-        if (!results.isEmpty()) {
-            System.out.println("----------------------------------------");
-            for (Product product : results) {
-                System.out.printf("%s%n", product.getInfo());
-                System.out.println("----------------------------------------");
+                // Tìm kiếm trực tiếp trên từng dòng của file
+                String lowerLine = line.toLowerCase();
+                if (lowerLine.contains(keyword)) {
+                    Product product = null;
+                    if (line.contains("Computer [")) {
+                        product = parseComputer(line);
+                    } else if (line.contains("Accessory [")) {
+                        product = parseAccessory(line);
+                    }
+                    
+                    if (product != null) {
+                        results.add(product);
+                    }
+                }
             }
-        } else {
-            System.out.println("Khong tim thay san pham nao!");
+
+            if (!results.isEmpty()) {
+                System.out.println("\nKet qua tim kiem cho '" + searchKeyword + "':");
+                for (Product product : results) {
+                    System.out.println("----------------------------------------");
+                    if (product instanceof Computer) {
+                        System.out.println("Computer " + product.getInfo());
+                    } else if (product instanceof Accessory) {
+                        System.out.println("Accessory " + product.getInfo());
+                    }
+                }
+                System.out.println("----------------------------------------");
+            } else {
+                System.out.println("Khong tim thay san pham nao!");
+            }
+            
+        } catch (IOException e) {
+            System.err.println("Loi khi doc file san pham: " + e.getMessage());
         }
         
         return results;
@@ -387,14 +397,14 @@ public class ProductService extends BaseService<Product> {
         loadItems();
         Map<String, Integer> stats = new HashMap<>();
         
-        int totalProducts = products.size();
-        long computerCount = products.stream()
+        int totalProducts = items.size();
+        long computerCount = items.stream()
             .filter(p -> p instanceof Computer)
             .count();
-        long accessoryCount = products.stream()
+        long accessoryCount = items.stream()
             .filter(p -> p instanceof Accessory)
             .count();
-        int lowStockCount = (int) products.stream()
+        int lowStockCount = (int) items.stream()
             .filter(p -> p.getQuantity() < 5)
             .count();
         
@@ -408,14 +418,14 @@ public class ProductService extends BaseService<Product> {
 
     public double calculateTotalInventoryValue() {
         loadItems();
-        return products.stream()
+        return items.stream()
             .mapToDouble(p -> p.getPrice() * p.getQuantity())
             .sum();
     }
 
     public List<Product> getLowStockProducts(int threshold) {
         loadItems();
-        return products.stream()
+        return items.stream()
             .filter(p -> p.getQuantity() <= threshold)
             .collect(Collectors.toList());
     }
@@ -440,7 +450,7 @@ public class ProductService extends BaseService<Product> {
 
     public void validateStock() {
         loadItems();
-        List<Product> invalidProducts = products.stream()
+        List<Product> invalidProducts = items.stream()
             .filter(p -> p.getQuantity() < 0 || p.getPrice() <= 0)
             .collect(Collectors.toList());
 

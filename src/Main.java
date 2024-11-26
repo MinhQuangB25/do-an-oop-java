@@ -14,10 +14,6 @@ public class Main {
     private static EmployeeService employeeService = new EmployeeService();
     private static InvoiceService invoiceService = new InvoiceService(customerService, employeeService, productService);
 
-    static {
-        employeeService.setInvoiceService(invoiceService);
-    }
-
     public static void main(String[] args) {
         while (true) {
             showMainMenu();
@@ -82,16 +78,8 @@ public class Main {
                         productService.addAccessory(id, name, price, quantity, type);
                     }
                     case 3 -> {
-                        List<Product> products = productService.getAllProducts();
-                        if (products.isEmpty()) {
-                            System.out.println("Danh sach san pham trong!");
-                        } else {
-                            System.out.println("\nDanh sach san pham:");
-                            products.forEach(p -> {
-                                System.out.println("----------------------------------------");
-                                p.display();
-                            });
-                        }
+                        System.out.println("\nDanh sach san pham:");
+                        productService.displayProductsFromFile();
                     }
                     case 4 -> {
                         String keyword = getStringInput("Nhap tu khoa tim kiem: ");

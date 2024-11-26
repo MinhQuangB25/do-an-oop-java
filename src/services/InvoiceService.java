@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.stream.Collectors;
+//import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +37,7 @@ public class InvoiceService extends BaseService<Invoice> {
             List<String> lines = fileHandler.readAllLines(filename);
             parseInvoicesFromLines(lines);
         } catch (IOException e) {
-            System.err.println("Loi khi doc file hoa don: " + e.getMessage());
+           
         }
     }
 
@@ -269,7 +269,6 @@ public class InvoiceService extends BaseService<Invoice> {
             }
             
         } catch (IOException e) {
-            System.err.println("Loi khi doc file: " + e.getMessage());
         }
     }
 
@@ -335,8 +334,6 @@ public class InvoiceService extends BaseService<Invoice> {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Loi khi xu ly dong: " + line);
-                System.err.println("Chi tiet loi: " + e.getMessage());
                 continue;
             }
         }

@@ -14,14 +14,8 @@ import java.util.stream.Collectors;
 //import java.text.SimpleDateFormat;
 
 public class EmployeeService extends BaseService<Employee> {
-    private InvoiceService invoiceService;
-
     public EmployeeService() {
         super("employees.txt");
-    }
-
-    public void setInvoiceService(InvoiceService invoiceService) {
-        this.invoiceService = invoiceService;
     }
 
     @Override
@@ -226,76 +220,5 @@ public class EmployeeService extends BaseService<Employee> {
         }
     }
 
-    // Thêm phương thức sử dụng invoiceService để tránh warning unused field
-    public void viewEmployeePerformance() {
-        System.out.println("\n=== THONG KE HIEU SUAT NHAN VIEN ===");
-        loadItems();
-        
-        if (invoiceService == null) {
-            System.out.println("Chua khoi tao InvoiceService!");
-            return;
-        }
-
-        try {
-            // Đọc trực tiếp từ file invoices.txt
-            List<String> invoiceLines = fileHandler.readAllLines("invoices.txt");
-            
-            for (Employee employee : items) {
-                System.out.printf("\nNhan vien: %s (%s)\n", employee.getName(), employee.getId());
-                
-                int invoiceCount = 0;
-                double totalSales = 0.0;
-                boolean isCurrentInvoice = false;
-                String currentEmployeeId = "";
-                double currentInvoiceTotal = 0.0;
-
-                for (String line : invoiceLines) {
-                    line = line.trim();
-                    
-                    // Bắt đầu hóa đơn mới
-                    if (line.startsWith("Invoice [ID:")) {
-                        isCurrentInvoice = true;
-                        currentInvoiceTotal = 0.0;
-                        continue;
-                    }
-                    
-                    // Kiểm tra nhân viên
-                    if (line.startsWith("Nhan vien:")) {
-                        String employeeInfo = line.substring("Nhan vien:".length()).trim();
-                        currentEmployeeId = employeeInfo.split("-")[0].trim();
-                        continue;
-                    }
-                    
-                    // Lấy tổng tiền
-                    if (line.startsWith("Tong tien:")) {
-                        String totalStr = line.substring("Tong tien:".length())
-                                            .replace("VND", "")
-                                            .replace(",", "")
-                                            .trim();
-                        try {
-                            currentInvoiceTotal = Double.parseDouble(totalStr);
-                            
-                            // Nếu là hóa đơn của nhân viên hiện tại
-                            if (isCurrentInvoice && currentEmployeeId.equals(employee.getId())) {
-                                invoiceCount++;
-                                totalSales += currentInvoiceTotal;
-                            }
-                            
-                            isCurrentInvoice = false;
-                        } catch (NumberFormatException e) {
-                            System.err.println("Loi parse so tien: " + totalStr);
-                        }
-                    }
-                }
-                
-                System.out.printf("- So luong hoa don: %d\n", invoiceCount);
-                System.out.printf("- Tong doanh so: %,.0f VND\n", totalSales);
-            }
-            
-        } catch (IOException e) {
-            System.err.println("Loi doc file hoa don: " + e.getMessage());
-        }
-    }
-
-    // ... rest of specific methods ...
+    
 } 
