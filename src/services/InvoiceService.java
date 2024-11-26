@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.stream.Collectors;
-import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -178,122 +177,173 @@ public class InvoiceService extends BaseService<Invoice> {
 
     public void searchInvoices() {
         System.out.println("\n=== TIM KIEM HOA DON ===");
-        System.out.println("1. Tim theo ma hoa don");
-        System.out.println("0. Quay lai");
+        String invoiceId = getStringInput("\nNhap ma hoa don can tim: ").toUpperCase();
         
-        int choice = getIntInput("Nhap lua chon: ");
-        loadItems(); // Đảm bảo load dữ liệu mới nhất
-        
-        switch (choice) {
-            case 1 -> {
-                // Hiển thị danh sách hóa đơn trước
-                System.out.println("\nDanh sach hoa don hien tai:");
-                displayFromFile();
-                
-                // Tiếp tục với quy trình tìm kiếm
-                String invoiceId = getStringInput("\nNhap ma hoa don can tim: ");
-                List<Invoice> results = items.stream()
-                    .filter(i -> i.getId().toLowerCase().contains(invoiceId.toLowerCase()))
-                    .collect(Collectors.toList());
+        try {
+            List<String> lines = fileHandler.readAllLines(filename);
+            boolean found = false;
+            boolean isCurrentInvoice = false;
+            List<String> currentInvoiceLines = new ArrayList<>();
+            
+            for (String line : lines) {
+                if (line.contains("Invoice [")) {
+                    if (isCurrentInvoice) {
+                        // In hóa đơn trước đó nếu đang trong quá trình hiển thị
+                        printInvoice(currentInvoiceLines);
+                        currentInvoiceLines.clear();
+                        isCurrentInvoice = false;
+                    }
                     
-                if (results.isEmpty()) {
-                    System.out.println("Khong tim thay hoa don nao!");
-                } else {
-                    System.out.println("\nKet qua tim kiem:");
-                    results.forEach(Invoice::display);
+                    // Kiểm tra nếu là hóa đơn cần tìm
+                    if (line.toUpperCase().contains(invoiceId)) {
+                        isCurrentInvoice = true;
+                        found = true;
+                    }
+                }
+                
+                if (isCurrentInvoice) {
+                    currentInvoiceLines.add(line);
                 }
             }
-            case 0 -> { return; }
-            default -> System.out.println("Lua chon khong hop le!");
+            
+            // In hóa đơn cuối cùng nếu có
+            if (!currentInvoiceLines.isEmpty()) {
+                printInvoice(currentInvoiceLines);
+            }
+            
+            if (!found) {
+                System.out.println("Khong tim thay hoa don nao!");
+            }
+            
+        } catch (IOException e) {
+            System.err.println("Loi khi doc file: " + e.getMessage());
+        }
+    }
+
+    private void printInvoice(List<String> invoiceLines) {
+        System.out.println("\n========== CHI TIET HOA DON ==========");
+        for (String line : invoiceLines) {
+            if (!line.trim().isEmpty()) {
+                System.out.println(line);
+            }
         }
     }
 
     public void displayCustomerPurchaseHistory(String customerId) {
-        loadItems();
-        List<Invoice> customerInvoices = items.stream()
-            .filter(i -> i.getCustomer() != null && 
-                         i.getCustomer().getId().equals(customerId))
-            .collect(Collectors.toList());
-        
-        if (customerInvoices.isEmpty()) {
-            System.out.println("Khach hang chua co lich su mua hang!");
-        } else {
-            System.out.println("\n=== LICH SU MUA HANG ===");
-            customerInvoices.forEach(Invoice::display);
+        System.out.println("\n=== LICH SU MUA HANG ===");
+        try {
+            List<String> lines = fileHandler.readAllLines(filename);
+            boolean found = false;
+            boolean isCurrentInvoice = false;
+            List<String> currentInvoiceLines = new ArrayList<>();
+            boolean isCustomerInvoice = false;
+            
+            for (String line : lines) {
+                if (line.contains("Invoice [")) {
+                    if (isCurrentInvoice && isCustomerInvoice) {
+                        // In hóa đơn trước đó của khách hàng này
+                        printInvoice(currentInvoiceLines);
+                    }
+                    currentInvoiceLines.clear();
+                    isCurrentInvoice = true;
+                    isCustomerInvoice = false;
+                }
+                
+                if (isCurrentInvoice) {
+                    currentInvoiceLines.add(line);
+                    // Kiểm tra nếu là dòng thông tin khách hàng
+                    if (line.contains("Khach hang:") && line.contains(customerId)) {
+                        isCustomerInvoice = true;
+                        found = true;
+                    }
+                }
+            }
+            
+            // In hóa đơn cuối cùng nếu là của khách hàng này
+            if (!currentInvoiceLines.isEmpty() && isCustomerInvoice) {
+                printInvoice(currentInvoiceLines);
+            }
+            
+            if (!found) {
+                System.out.println("Khach hang chua co lich su mua hang!");
+            }
+            
+        } catch (IOException e) {
+            System.err.println("Loi khi doc file: " + e.getMessage());
         }
     }
 
     private void parseInvoicesFromLines(List<String> lines) {
         Invoice currentInvoice = null;
-        List<String> currentInvoiceDetails = new ArrayList<>();
         
         for (String line : lines) {
             if (line == null || line.trim().isEmpty()) {
                 continue;
             }
             
-            if (line.startsWith("===== HOA DON")) {
-                continue;
-            }
-
             try {
                 if (line.contains("Invoice [")) {
                     if (currentInvoice != null) {
-                        final Invoice finalInvoice = currentInvoice;
-                        finalInvoice.setDisplayDetails(new ArrayList<>(currentInvoiceDetails));
-                        items.add(finalInvoice);
+                        items.add(currentInvoice);
                     }
                     
-                    currentInvoice = parseInvoice(line);
-                    if (currentInvoice != null) {
-                        currentInvoiceDetails = new ArrayList<>();
-                        currentInvoiceDetails.add(line);
-                    }
+                    // Parse invoice header
+                    String[] parts = line.split("\\[|\\]")[1].split(",");
+                    String id = parts[0].split(":")[1].trim();
+                    String dateStr = parts[1].split(":")[1].trim();
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    Date date = sdf.parse(dateStr);
+                    
+                    currentInvoice = new Invoice(id, date);
+                    
                 } else if (currentInvoice != null) {
-                    final Invoice finalCurrentInvoice = currentInvoice;
-                    currentInvoiceDetails.add(line);
+                    final Invoice invoice = currentInvoice;
                     
                     if (line.contains("Khach hang:")) {
-                        String customerInfo = line.substring("Khach hang:".length()).trim();
+                        String customerInfo = line.substring(line.indexOf(":") + 1).trim();
                         String[] parts = customerInfo.split("-", 2);
                         if (parts.length > 1) {
                             String customerId = parts[0].trim();
-                            customerService.findById(customerId).ifPresent(finalCurrentInvoice::setCustomer);
+                            customerService.findById(customerId).ifPresent(invoice::setCustomer);
                         }
                     } else if (line.contains("Nhan vien:")) {
-                        String employeeInfo = line.substring("Nhan vien:".length()).trim();
+                        String employeeInfo = line.substring(line.indexOf(":") + 1).trim();
                         String[] parts = employeeInfo.split("-", 2);
                         if (parts.length > 1) {
                             String employeeId = parts[0].trim();
-                            employeeService.findById(employeeId).ifPresent(finalCurrentInvoice::setEmployee);
+                            employeeService.findById(employeeId).ifPresent(invoice::setEmployee);
                         }
+                    } else if (line.contains("(Ma:") && line.contains("x")) {
+                        // Parse product details
+                        String[] parts = line.split("x");
+                        String productInfo = parts[0].trim();
+                        String productId = productInfo.substring(
+                            productInfo.indexOf("(Ma:") + 4,
+                            productInfo.indexOf(")")
+                        ).trim();
+                        
+                        // Extract quantity
+                        String quantityStr = parts[1].trim();
+                        int quantity = Integer.parseInt(
+                            quantityStr.substring(0, quantityStr.indexOf(":")).trim()
+                        );
+                        
+                        // Add product to invoice
+                        productService.findById(productId).ifPresent(product -> 
+                            invoice.addItem(product, quantity)
+                        );
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Lỗi khi xử lý dòng: " + line);
-                System.err.println("Chi tiết lỗi: " + e.getMessage());
+                System.err.println("Loi khi xu ly dong: " + line);
+                System.err.println("Chi tiet loi: " + e.getMessage());
                 continue;
             }
         }
         
+        // Add the last invoice if exists
         if (currentInvoice != null) {
-            currentInvoice.setDisplayDetails(new ArrayList<>(currentInvoiceDetails));
             items.add(currentInvoice);
-        }
-    }
-
-    private Invoice parseInvoice(String line) {
-        try {
-            String content = line.substring(line.indexOf("[") + 1, line.indexOf("]"));
-            String[] parts = content.split(",");
-            String id = parts[0].substring(parts[0].indexOf(":") + 1).trim();
-            String dateString = parts[1].substring(parts[1].indexOf(":") + 1).trim();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            Date date = sdf.parse(dateString);
-            return new Invoice(id, date);
-        } catch (ParseException e) {
-            System.err.println("Li khi parse Invoice: " + e.getMessage());
-            return null;
         }
     }
 

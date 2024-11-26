@@ -15,13 +15,6 @@ public class Invoice implements Identifiable, Printable, Serializable {
     private Employee employee;
     private List<InvoiceDetail> items;
     private double totalAmount;
-    private List<String> displayDetails;
-
-    public Invoice() {
-        this.date = new Date();
-        this.items = new ArrayList<>();
-        this.totalAmount = 0.0;
-    }
 
     public Invoice(String id, Customer customer, Employee employee) {
         this.id = id;
@@ -61,9 +54,6 @@ public class Invoice implements Identifiable, Printable, Serializable {
     public double getTotalAmount() { return totalAmount; }
 
     public void addItem(Product product, int quantity) {
-        if (items == null) {
-            items = new ArrayList<>();
-        }
         items.add(new InvoiceDetail(product, quantity));
         calculateTotal();
     }
@@ -79,8 +69,8 @@ public class Invoice implements Identifiable, Printable, Serializable {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("Invoice [ID: %s, Date: %s]\n", id, sdf.format(date)));
-        sb.append(String.format("Khach hang: %s\n", customer.getName()));
-        sb.append(String.format("Nhan vien: %s\n", employee.getName()));
+        sb.append(String.format("Khach hang: %s - %s\n", customer.getId(), customer.getName()));
+        sb.append(String.format("Nhan vien: %s - %s\n", employee.getId(), employee.getName()));
         sb.append("San pham:\n");
         for (InvoiceDetail item : items) {
             sb.append(String.format("- %s x%d: %,.0f VND\n", 
@@ -94,20 +84,9 @@ public class Invoice implements Identifiable, Printable, Serializable {
 
     @Override
     public void display() {
-        if (displayDetails != null && !displayDetails.isEmpty()) {
-            System.out.println("\n========== CHI TIET HOA DON ==========");
-            for (String line : displayDetails) {
-                System.out.println(line);
-            }
-            System.out.println("======================================");
-        } else {
-            // Fallback display nếu không có chi tiết
-            System.out.println(getInfo());
-        }
-    }
-
-    public void setDisplayDetails(List<String> details) {
-        this.displayDetails = details;
+        System.out.println("\n========== CHI TIET HOA DON ==========");
+        System.out.println(getInfo());
+        System.out.println("======================================");
     }
 
     public static class InvoiceDetail implements Serializable {
