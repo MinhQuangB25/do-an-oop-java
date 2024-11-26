@@ -1,267 +1,179 @@
 package services;
 
 import models.Customer;
-import utils.FileHandler;
+//import utils.FileHandler;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.charset.StandardCharsets;
+//import java.io.IOException;
+//import java.nio.file.Files;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
+//import java.nio.charset.StandardCharsets;
+//import java.util.Scanner;
+import java.util.stream.Collectors;
 
-public class CustomerService {
-    private FileHandler<Customer> fileHandler;
-    private static final String FILENAME = "customers.txt";
-
+public class CustomerService extends BaseService<Customer> {
     public CustomerService() {
-        this.fileHandler = new FileHandler<>();
+        super("customers.txt");
+    }
+    
+    @Override
+    protected void loadItems() {
+        items = fileHandler.loadFromFile(filename);
+        if (items == null) {
+            items = new ArrayList<>();
+        }
     }
 
-    public void addCustomer(Customer customer) {
-        List<Customer> customers = getAllCustomers();
-        if (customers == null) {
-            customers = new ArrayList<>();
+    @Override
+    public Optional<Customer> findById(String id) {
+        loadItems();
+        return items.stream()
+            .filter(c -> c.getId().equals(id))
+            .findFirst();
+    }
+
+    @Override
+    protected void validateInput(String id, String name) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new IllegalArgumentException("Ma khach hang khong duoc de trong!");
         }
-        
-        if (findById(customer.getId()).isPresent()) {
+        if (findById(id).isPresent()) {
             throw new IllegalArgumentException("Ma khach hang da ton tai!");
         }
-        
-        customers.add(customer);
-        
-        fileHandler.setUpdatingFile(false);
-        
-        List<Customer> newCustomer = new ArrayList<>();
-        newCustomer.add(customer);
-        fileHandler.saveToFile(FILENAME, newCustomer);
-    }
-
-    public void updateCustomer(Customer customer) {
-        try {
-            List<String> lines = fileHandler.readAllLines(FILENAME);
-            List<String> updatedLines = new ArrayList<>();
-            boolean found = false;
-            
-            // Giữ lại header
-            if (!lines.isEmpty()) {
-                updatedLines.add(lines.get(0)); // Thêm dòng header
-            }
-            
-            for (String line : lines) {
-                if (line.startsWith("=====") || line.startsWith("----")) {
-                    // Giữ lại các dòng phân cách
-                    updatedLines.add(line);
-                    continue;
-                }
-                
-                if (line.contains("Customer [")) {
-                    String customerInfo = line.substring(line.indexOf("[") + 1, line.indexOf("]"));
-                    String[] parts = customerInfo.split(",");
-                    String currentId = "";
-                    
-                    // Tìm ID của khách hàng trong dòng hiện tại
-                    for (String part : parts) {
-                        if (part.trim().startsWith("ID:")) {
-                            currentId = part.substring(part.indexOf(":") + 1).trim();
-                            break;
-                        }
-                    }
-                    
-                    // Nếu tìm thấy khách hàng cần cập nhật
-                    if (currentId.equals(customer.getId())) {
-                        found = true;
-                        // Tạo dòng mới với thông tin đã cập nhật
-                        String updatedLine = String.format("Customer [ID: %s, Name: %s, Address: %s, Phone: %s]",
-                            customer.getId(),
-                            customer.getName(),
-                            customer.getAddress(),
-                            customer.getPhone());
-                        updatedLines.add(updatedLine);
-                    } else {
-                        // Giữ nguyên dòng cũ nếu không phải khách hàng cần cập nhật
-                        updatedLines.add(line);
-                    }
-                }
-            }
-            
-            if (!found) {
-                throw new IllegalArgumentException("Không tìm thấy khách hàng cần cập nhật!");
-            }
-            
-            // Ghi lại toàn bộ file với nội dung đã cập nhật
-            Path path = Paths.get(fileHandler.getDirectory() + FILENAME);
-            Files.write(path, updatedLines, StandardCharsets.UTF_8);
-            
-        } catch (IOException e) {
-            System.err.println("Lỗi khi cập nhật thông tin khách hàng: " + e.getMessage());
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Ten khach hang khong duoc de trong!");
         }
     }
 
-    public void deleteCustomer(String id) {
-        try {
-            List<String> lines = fileHandler.readAllLines(FILENAME);
-            List<String> updatedLines = new ArrayList<>();
-            boolean isFirstSection = true;
-            
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                
-                // Giữ lại header
-                if (isFirstSection && (line.startsWith("=====") || line.trim().isEmpty())) {
-                    updatedLines.add(line);
-                    continue;
-                }
-                isFirstSection = false;
-                
-                // Kiểm tra nếu đây là phần thông tin khách hàng cần xóa
-                if (line.contains("Customer [") && line.contains("ID: " + id + ",")) {
-                    // Bỏ qua dòng phân cách trước thông tin khách hàng (nếu có)
-                    if (i > 0 && lines.get(i-1).startsWith("----")) {
-                        continue;
-                    }
-                    // Bỏ qua dòng phân cách sau thông tin khách hàng (nếu có)
-                    if (i < lines.size() - 1 && lines.get(i+1).startsWith("----")) {
-                        i++; // Skip next line
-                    }
-                    continue;
-                }
-                
-                updatedLines.add(line);
-            }
-            
-            // Ghi lại file với nội dung đã cập nhật
-            fileHandler.setUpdatingFile(true);
-            Files.write(Paths.get(fileHandler.getDirectory() + FILENAME), 
-                       updatedLines, 
-                       StandardCharsets.UTF_8);
-            fileHandler.setUpdatingFile(false);
-            
-        } catch (IOException e) {
-            System.err.println("Loi khi xoa khach hang: " + e.getMessage());
+    public void searchItems() {
+        String keyword = getStringInput("Nhap tu khoa tim kiem: ");
+        loadItems(); // Đảm bảo load dữ liệu mới nhất
+        
+        List<Customer> results = items.stream()
+            .filter(c -> c.getId().toLowerCase().contains(keyword.toLowerCase()) ||
+                        c.getName().toLowerCase().contains(keyword.toLowerCase()) ||
+                        c.getPhone().contains(keyword) ||
+                        c.getAddress().toLowerCase().contains(keyword.toLowerCase()))
+            .collect(Collectors.toList());
+        
+        if (results.isEmpty()) {
+            System.out.println("Khong tim thay khach hang nao!");
+            return;
         }
-    }
 
-    public Optional<Customer> findById(String id) {
-        try {
-            List<String> lines = fileHandler.readAllLines(FILENAME);
-            for (String line : lines) {
-                if (line.contains("Customer [")) {
-                    String customerInfo = line.substring(line.indexOf("[") + 1, line.indexOf("]"));
-                    String[] parts = customerInfo.split(",");
-                    
-                    String customerId = "";
-                    String customerName = "";
-                    String address = "";
-                    String phone = "";
-                    
-                    for (String part : parts) {
-                        part = part.trim();
-                        if (part.startsWith("ID:")) {
-                            customerId = part.substring(part.indexOf(":") + 1).trim();
-                        } else if (part.startsWith("Name:")) {
-                            customerName = part.substring(part.indexOf(":") + 1).trim();
-                        } else if (part.startsWith("Address:")) {
-                            address = part.substring(part.indexOf(":") + 1).trim();
-                        } else if (part.startsWith("Phone:")) {
-                            phone = part.substring(part.indexOf(":") + 1).trim();
-                        }
-                    }
-                    
-                    if (customerId.equals(id)) {
-                        Customer customer = new Customer(customerId, customerName, address, phone);
-                        return Optional.of(customer);
-                    }
-                }
-            }
-            return Optional.empty();
-        } catch (IOException e) {
-            System.err.println("Loi khi doc file khach hang: " + e.getMessage());
-            return Optional.empty();
-        }
+        System.out.println("\nKet qua tim kiem:");
+        results.forEach(Customer::display);
     }
 
     public List<Customer> findByName(String name) {
-        List<Customer> results = new ArrayList<>();
-        
-        if (name == null || name.trim().isEmpty()) {
-            return results;
+        loadItems();
+        String searchName = name.toLowerCase().trim();
+        return items.stream()
+            .filter(c -> c.getName().toLowerCase().contains(searchName))
+            .collect(Collectors.toList());
+    }
+
+    public void updateCustomerDetails(String id, String name, String address, String phone) {
+        Optional<Customer> customerOpt = findById(id);
+        if (customerOpt.isEmpty()) {
+            throw new IllegalArgumentException("Khong tim thay khach hang!");
         }
 
-        String searchName = name.trim().toLowerCase();
+        Customer customer = customerOpt.get();
+
+        // Cập nhật từng trường thông tin nếu có
+        if (name != null && !name.trim().isEmpty()) {
+            customer.setName(name);
+        }
+        if (address != null && !address.trim().isEmpty()) {
+            customer.setAddress(address);
+        }
+        if (phone != null && !phone.trim().isEmpty()) {
+            if (!phone.matches("\\d{10,11}")) {
+                throw new IllegalArgumentException("So dien thoai khong hop le (can 10-11 so)!");
+            }
+            customer.setPhone(phone);
+        }
+
+        updateCustomer(customer);
+    }
+
+    public void updateCustomer(Customer customer) {
+        if (customer == null) return;
+        
+        loadItems(); // Load lại danh sách trước khi cập nhật
+        
+        // Tìm và cập nhật khách hàng trong danh sách
+        boolean found = false;
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).getId().equals(customer.getId())) {
+                items.set(i, customer);
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            throw new IllegalArgumentException("Khong tim thay khach hang!");
+        }
+        
+        // Đánh dấu là đang cập nhật toàn bộ file
+        fileHandler.setUpdatingFile(true);
+        fileHandler.saveToFile(filename, items);
+        fileHandler.setUpdatingFile(false);
+        
+        System.out.println("Cap nhat khach hang thanh cong!");
+    }
+
+    public void deleteCustomer(String id) {
+        Optional<Customer> customerOpt = findById(id);
+        if (customerOpt.isEmpty()) {
+            throw new IllegalArgumentException("Khong tim thay khach hang!");
+        }
+
+        // Load lại danh sách mới nhất
+        loadItems();
+        
+        // Xóa khách hàng khỏi danh sách
+        boolean removed = items.removeIf(c -> c.getId().equals(id));
+        
+        if (!removed) {
+            throw new IllegalArgumentException("Xoa khach hang that bai!");
+        }
         
         try {
-            List<String> lines = fileHandler.readAllLines(FILENAME);
-            for (String line : lines) {
-                // Bỏ qua các dòng header và phân cách
-                if (line.startsWith("=====") || line.startsWith("----") || line.trim().isEmpty()) {
-                    continue;
-                }
-                
-                if (line.contains("Customer [")) {
-                    // Format: Customer [ID: KH001, Name: Nguyen Van A, Address: Ha Noi, Phone: 0123456789, Rank: Normal]
-                    String customerInfo = line.substring(line.indexOf("[") + 1, line.indexOf("]"));
-                    String[] parts = customerInfo.split(",");
-                    
-                    String id = "";
-                    String customerName = "";
-                    String address = "";
-                    String phone = "";
-                    
-                    for (String part : parts) {
-                        part = part.trim();
-                        if (part.startsWith("ID:")) {
-                            id = part.substring(part.indexOf(":") + 1).trim();
-                        } else if (part.startsWith("Name:")) {
-                            customerName = part.substring(part.indexOf(":") + 1).trim();
-                        } else if (part.startsWith("Address:")) {
-                            address = part.substring(part.indexOf(":") + 1).trim();
-                        } else if (part.startsWith("Phone:")) {
-                            phone = part.substring(part.indexOf(":") + 1).trim();
-                        }
-                    }
-                    
-                    // Kiểm tra nếu tên khách hàng chứa từ khóa tìm kiếm
-                    if (!customerName.isEmpty() && 
-                        customerName.toLowerCase().contains(searchName)) {
-                        Customer customer = new Customer(id, customerName, address, phone);
-                        results.add(customer);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Lỗi khi đọc file khách hàng: " + e.getMessage());
+            // Ghi đè toàn bộ file với danh sách mới
+            fileHandler.setUpdatingFile(true);
+            fileHandler.saveToFile(filename, items);
+            fileHandler.setUpdatingFile(false);
+            
+            System.out.println("Xoa khach hang thanh cong!");
+        } catch (Exception e) {
+            System.err.println("Loi khi xoa khach hang: " + e.getMessage());
+            throw new RuntimeException("Xoa khach hang that bai!", e);
+        }
+    }
+
+    public void addCustomer(Customer customer) {
+        validateInput(customer.getId(), customer.getName());
+        
+        if (customer.getPhone() != null && !customer.getPhone().isEmpty() 
+            && !customer.getPhone().matches("\\d{10,11}")) {
+            throw new IllegalArgumentException("So dien thoai khong hop le (can 10-11 so)!");
         }
         
-        return results;
+        loadItems();
+        items.add(customer);
+        fileHandler.saveToFile(filename, List.of(customer));
+        System.out.println("Them khach hang thanh cong!");
     }
 
-    public List<Customer> getAllCustomers() {
-        List<Customer> customers = fileHandler.loadFromFile(FILENAME);
-        if (customers == null) {
-            customers = new ArrayList<>();
-        }
-        return customers;
+    public List<Customer> getAllItems() {
+        loadItems();
+        return new ArrayList<>(items);
     }
 
-    public void displayCustomersFromFile() {
-        try {
-            List<String> lines = fileHandler.readAllLines(FILENAME);
-            if (lines.isEmpty()) {
-                System.out.println("Danh sach khach hang trong!");
-                return;
-            }
-
-            // In danh sách khách hàng
-            for (String line : lines) {
-                if (line.contains("Customer [")) {
-                    System.out.println(line);
-                    System.out.println("----------------------------------------");
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Loi khi doc file khach hang: " + e.getMessage());
-        }
-    }
+    // ... các phương thức đặc thù của CustomerService ...
 } 

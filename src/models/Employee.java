@@ -42,15 +42,24 @@ public class Employee implements Identifiable, Printable, Serializable {
 
     @Override
     public String getInfo() {
-        return String.format("Nhan vien [ID: %s, Ten: %s, SDT: %s, Dia chi: %s, Chuc vu: %s]",
-            id, name, phone, address, position);
+        if (basicSalary > 0) {
+            return String.format("Employee [ID: %s, Name: %s, Phone: %s, Address: %s, Position: %s, Basic Salary: %,.0f]",
+                id, name, phone, address, position, basicSalary);
+        } else {
+            return String.format("Employee [ID: %s, Name: %s, Phone: %s, Address: %s, Position: %s]",
+                id, name, phone, address, position);
+        }
     }
 
     @Override
     public void display() {
-        System.out.printf("Nhan vien [ID: %s, Ten: %s, SDT: %s, Dia chi: %s, Chuc vu: %s]\n",
-            id, name, phone, address, position);
-        System.out.printf("Luong co ban: %,.0f VND\n", basicSalary);
+        if (basicSalary > 0) {
+            System.out.printf("Employee [ID: %s, Name: %s, Phone: %s, Address: %s, Position: %s, Basic Salary: %,.0f]%n",
+                id, name, phone, address, position, basicSalary);
+        } else {
+            System.out.printf("Employee [ID: %s, Name: %s, Phone: %s, Address: %s, Position: %s]%n",
+                id, name, phone, address, position);
+        }
     }
 
     public void addSalesInvoice(Invoice invoice) {

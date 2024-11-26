@@ -1,15 +1,9 @@
-
+===== DANH SACH CUSTOMER =====
 ----------------------------------------
-Customer [ID: KH001, Name: Nguyen Van A, Address: Ha Noi, Phone: 0123456789]
+Customer [ID: KH001, Name: Tien An, Address: TPHCM, Phone: 0234567891]
 ----------------------------------------
-Customer [ID: KH002, Name: Tran Thi B, Address: Ho Chi Minh, Phone: 0987654321]
+Customer [ID: KH002, Name: Hao, Address: 0234567891, Phone: HA NOI]
 ----------------------------------------
-Customer [ID: KH003, Name: Le Van C, Address: Da Nang, Phone: 0369852147]
+Customer [ID: KH004, Name: Quan, Address: TPHCM, Phone: 0123456789]
 ----------------------------------------
-----------------------------------------
-Customer [ID: KH004, Name: Vu Van D, Address: Ha Noi, Phone: 09876543211]
-----------------------------------------
-----------------------------------------
-Customer [ID: KH005, Name: ngan, Address: tphcm, Phone: 1234567890]
-----------------------------------------
-Customer [ID: KH006, Name: Kieu, Address: Ha Noi, Phone: 09876543211]
+Customer [ID: KH005, Name: ABCD, Address: TPHCM, Phone: 02345678911]

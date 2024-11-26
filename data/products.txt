@@ -11,4 +11,4 @@ Accessory [ID: A003, Name: Samsung 27" Monitor, Price: 300, Quantity: 1, Type: M
 ----------------------------------------
 Computer [ID: C003, Name: Acer nitro, Price: 150, Quantity: 6, CPU: Inter i9, RAM: 16, Hard Drive: 321]
 ----------------------------------------
-Computer [ID: C004, Name: MACBOOK M4, Price: 250, Quantity: 2, CPU: 16, RAM: M1, Hard Drive: 512]
+Computer [ID: C004, Name: MACBOOK M4, Price: 250, Quantity: 0, CPU: 16, RAM: M1, Hard Drive: 512]

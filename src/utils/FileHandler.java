@@ -12,11 +12,11 @@ import java.util.*;
 import java.text.SimpleDateFormat;
 
 public class FileHandler<T> {
-    private String directory = "data/";
+    private String directory = "do-an-oop-lam-lai/data/";
     private boolean isUpdatingFile = false;
     private CustomerService customerService;
     private EmployeeService employeeService;
-   // private ProductService productService;
+    private ProductService productService;
 
     public FileHandler() {
         createDataDirectoryIfNotExists();
@@ -25,8 +25,9 @@ public class FileHandler<T> {
     private void createDataDirectoryIfNotExists() {
         File dataDir = new File(directory);
         if (!dataDir.exists()) {
+            System.out.println("Thư mục data không tồn tại: " + dataDir.getAbsolutePath());
             dataDir.mkdirs();
-        }
+        } 
     }
 
     public void setUpdatingFile(boolean updating) {
@@ -42,31 +43,43 @@ public class FileHandler<T> {
             Path path = Paths.get(directory + filename);
             List<String> lines = new ArrayList<>();
             
-            // Thêm header nếu file trống hoặc không tồn tại
-            if (!Files.exists(path) || Files.size(path) == 0) {
-                lines.add("===== DANH SACH " + getHeaderType(filename) + " =====");
-            }
-            
-            // Thêm dữ liệu mới
-            for (T item : data) {
-                lines.add("----------------------------------------");
-                if (item instanceof Printable) {
-                    lines.add(((Printable) item).getInfo());
-                }
-            }
-            
-            // Nếu đang cập nhật file, ghi đè toàn bộ
+            // Nếu đang cập nhật toàn bộ file
             if (isUpdatingFile) {
+                // Thêm header cho file mới
+                lines.add("===== DANH SACH " + getHeaderType(filename) + " =====");
+                
+                // Thêm tất cả dữ liệu
+                for (T item : data) {
+                    lines.add("----------------------------------------");
+                    if (item instanceof Printable) {
+                        lines.add(((Printable) item).getInfo());
+                    }
+                }
+                
+                // Ghi đè toàn bộ file
                 Files.write(path, lines, StandardCharsets.UTF_8);
             } else {
-                // Nếu đang thêm mới, append vào cuối file
+                // Chế độ thêm mới (append)
                 if (!Files.exists(path)) {
+                    // Tạo file mới với header nếu chưa tồn tại
+                    lines.add("===== DANH SACH " + getHeaderType(filename) + " =====");
                     Files.write(path, lines, StandardCharsets.UTF_8);
-                } else {
-                    Files.write(path, lines, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
                 }
+                
+                // Đọc nội dung hiện tại của file
+                lines = Files.readAllLines(path, StandardCharsets.UTF_8);
+                
+                // Thêm dữ liệu mới vào cuối
+                for (T item : data) {
+                    lines.add("----------------------------------------");
+                    if (item instanceof Printable) {
+                        lines.add(((Printable) item).getInfo());
+                    }
+                }
+                
+                // Ghi lại toàn bộ nội dung vào file
+                Files.write(path, lines, StandardCharsets.UTF_8);
             }
-            
         } catch (IOException e) {
             System.err.println("Loi khi luu file: " + e.getMessage());
         }
@@ -87,31 +100,46 @@ public class FileHandler<T> {
             
             // Nếu file chưa tồn tại, tạo header
             if (!Files.exists(path)) {
-                lines.add("===== DANH SACH HOA DON =====");
+                lines.add("===== HOA DON BAN HANG =====");
             } else {
                 // Nếu file đã tồn tại, đọc toàn bộ nội dung cũ
                 lines = Files.readAllLines(path, StandardCharsets.UTF_8);
             }
             
-            // Thêm hóa đơn mới vào cuối
+            // Thêm hóa đơn mới vào cuối với format mới
             lines.add("----------------------------------------");
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             lines.add(String.format("Invoice [ID: %s, Date: %s]", 
                 invoice.getId(),
                 sdf.format(invoice.getDate())));
-            lines.add(String.format("Khach hang: %s", 
-                invoice.getCustomer().getName()));
-            lines.add(String.format("Nhan vien: %s", 
-                invoice.getEmployee().getName()));
-            lines.add("San pham:");
+            lines.add("----------------------------------------");
             
-            for (var detail : invoice.getItems()) {
-                lines.add(String.format("- %s x%d: %,.0f VND", 
+            // Thông tin khách hàng
+            lines.add(String.format("Khach hang: %s - %s", 
+                invoice.getCustomer().getId(),
+                invoice.getCustomer().getName()));
+            lines.add("----------------------------------------");
+            
+            // Thông tin nhân viên
+            lines.add(String.format("Nhan vien: %s - %s", 
+                invoice.getEmployee().getId(),
+                invoice.getEmployee().getName()));
+            lines.add("----------------------------------------");
+            
+            // Chi tiết sản phẩm
+            lines.add("Chi tiet san pham:");
+            lines.add("----------------------------------------");
+            
+            for (Invoice.InvoiceDetail detail : invoice.getItems()) {
+                lines.add(String.format("- %s (Ma: %s) x%d: %,.0f VND", 
                     detail.getProduct().getName(),
+                    detail.getProduct().getId(),
                     detail.getQuantity(),
                     detail.getProduct().getPrice() * detail.getQuantity()));
+                lines.add("----------------------------------------");
             }
             
+            // Tổng tiền
             lines.add(String.format("Tong tien: %,.0f VND", invoice.getTotalAmount()));
             lines.add("----------------------------------------");
             
@@ -140,36 +168,27 @@ public class FileHandler<T> {
         try {
             List<String> lines = readAllLines(filename);
             
-            Invoice currentInvoice = null;
             for (String line : lines) {
                 if (line.trim().isEmpty() || line.startsWith("===") || line.startsWith("---")) {
                     continue;
                 }
-                
-                if (line.contains("Computer[")) {
+                // Parsing logic for different types
+                if (line.contains("Computer [")) {
                     T item = (T) parseComputer(line);
-                    if (item != null) items.add(item);
-                } else if (line.contains("Accessory[")) {
+                    if (item != null) {
+                        items.add(item);
+                    }
+                } else if (line.contains("Accessory [")) {
                     T item = (T) parseAccessory(line);
+                    if (item != null) {
+                        items.add(item);
+                    }
+                } else if (line.contains("Customer [")) {
+                    T item = (T) parseCustomer(line);
                     if (item != null) items.add(item);
-                } else if (line.contains("Invoice [")) {
-                    currentInvoice = parseInvoice(line);
-                    if (currentInvoice != null) {
-                        items.add((T) currentInvoice);
-                    }
-                } else if (currentInvoice != null) {
-                    // Xử lý thông tin chi tiết của hóa đơn
-                    if (line.startsWith("Khach hang:")) {
-                        String customerId = line.substring("Khach hang:".length()).trim();
-                        if (customerService != null) {
-                            customerService.findById(customerId).ifPresent(currentInvoice::setCustomer);
-                        }
-                    } else if (line.startsWith("Nhan vien:")) {
-                        String employeeId = line.substring("Nhan vien:".length()).trim();
-                        if (employeeService != null) {
-                            employeeService.findById(employeeId).ifPresent(currentInvoice::setEmployee);
-                        }
-                    }
+                } else if (line.contains("Employee [")) {
+                    T item = (T) parseEmployee(line);
+                    if (item != null) items.add(item);
                 }
             }
         } catch (IOException e) {
@@ -182,13 +201,13 @@ public class FileHandler<T> {
         try {
             Map<String, String> data = extractData(line);
             return new Computer(
-                data.get("id"),
-                data.get("name"),
-                Double.parseDouble(data.get("price")),
-                Integer.parseInt(data.get("quantity")),
-                data.get("cpu"),
-                data.get("ram"),
-                data.get("hardDrive")
+                data.getOrDefault("ID", "").trim(),
+                data.getOrDefault("Name", "").trim(),
+                Double.parseDouble(data.getOrDefault("Price", "0").trim().replace(",", "")),
+                Integer.parseInt(data.getOrDefault("Quantity", "0").trim()),
+                data.getOrDefault("CPU", "").trim(),
+                data.getOrDefault("RAM", "").trim(),
+                data.getOrDefault("Hard Drive", "").trim()
             );
         } catch (Exception e) {
             System.err.println("Lỗi khi parse Computer: " + e.getMessage());
@@ -200,11 +219,11 @@ public class FileHandler<T> {
         try {
             Map<String, String> data = extractData(line);
             return new Accessory(
-                data.get("id"),
-                data.get("name"),
-                Double.parseDouble(data.get("price")),
-                Integer.parseInt(data.get("quantity")),
-                data.get("type")
+                data.getOrDefault("ID", "").trim(),
+                data.getOrDefault("Name", "").trim(),
+                Double.parseDouble(data.getOrDefault("Price", "0").trim().replace(",", "")),
+                Integer.parseInt(data.getOrDefault("Quantity", "0").trim()),
+                data.getOrDefault("Type", "").trim()
             );
         } catch (Exception e) {
             System.err.println("Lỗi khi parse Accessory: " + e.getMessage());
@@ -212,26 +231,23 @@ public class FileHandler<T> {
         }
     }
 
-    private Invoice parseInvoice(String line) {
-        try {
-            Map<String, String> data = extractData(line);
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            Date date = sdf.parse(data.get("Date"));
-            return new Invoice(data.get("ID"), date);
-        } catch (Exception e) {
-            System.err.println("Lỗi khi parse Invoice: " + e.getMessage());
-            return null;
-        }
-    }
+   
 
     private Map<String, String> extractData(String line) {
-        Map<String, String> data = new HashMap<String, String>();
+        Map<String, String> data = new LinkedHashMap<>();
         try {
-            String content = line.substring(line.indexOf("[") + 1, line.indexOf("]"));
-            for (String pair : content.split(",")) {
-                String[] parts = pair.split("=");
-                if (parts.length == 2) {
-                    data.put(parts[0].trim(), parts[1].trim());
+            String content = line.substring(line.indexOf("[") + 1, line.lastIndexOf("]"));
+            String[] pairs = content.split(",(?=\\s*(?!Basic Salary:)[A-Za-z]+:)");
+            
+            for (String pair : pairs) {
+                String[] keyValue = pair.split(":", 2);
+                if (keyValue.length == 2) {
+                    String key = keyValue[0].trim();
+                    String value = keyValue[1].trim();
+                    
+                    if (!key.equals("Basic Salary") || !data.containsKey(key)) {
+                        data.put(key, value);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -304,6 +320,140 @@ public class FileHandler<T> {
     public void setServices(CustomerService customerService, EmployeeService employeeService, ProductService productService) {
         this.customerService = customerService;
         this.employeeService = employeeService;
-        //this.productService = productService;
+        this.productService = productService;
+    }
+
+    private Customer parseCustomer(String line) {
+        try {
+            Map<String, String> data = extractData(line);
+            return new Customer(
+                data.getOrDefault("ID", "").trim(),
+                data.getOrDefault("Name", "").trim(),
+                data.getOrDefault("Phone", "").trim(),
+                data.getOrDefault("Address", "").trim()
+            );
+        } catch (Exception e) {
+            System.err.println("Lỗi khi parse Customer: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private Employee parseEmployee(String line) {
+        try {
+            Map<String, String> data = extractData(line);
+            String basicSalaryStr = data.getOrDefault("Basic Salary", "0").trim();
+            // Loại bỏ dấu phẩy và chuyển đổi sang double
+            double basicSalary = Double.parseDouble(basicSalaryStr.replace(",", ""));
+            
+            Employee employee = new Employee(
+                data.getOrDefault("ID", "").trim(),
+                data.getOrDefault("Name", "").trim(),
+                data.getOrDefault("Phone", "").trim(),
+                data.getOrDefault("Address", "").trim(),
+                data.getOrDefault("Position", "").trim(),
+                basicSalary
+            );
+            return employee;
+        } catch (Exception e) {
+            System.err.println("Lỗi khi parse Employee: " + e.getMessage());
+            e.printStackTrace(); // Thêm dòng này để debug
+            return null;
+        }
+    }
+
+    public List<Invoice> loadInvoicesFromFile(String filename) {
+        List<Invoice> invoices = new ArrayList<>();
+        try {
+            List<String> lines = readAllLines(filename);
+            Invoice currentInvoice = null;
+            Customer customer = null;
+            Employee employee = null;
+            List<Invoice.InvoiceDetail> items = new ArrayList<>();
+            
+            for (String line : lines) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("=====") || line.equals("----------------------------------------")) {
+                    continue;
+                }
+
+                if (line.startsWith("Invoice [ID:")) {
+                    // Lưu hóa đơn trước đó nếu có đầy đủ thông tin
+                    if (currentInvoice != null && customer != null && employee != null) {
+                        currentInvoice.setCustomer(customer);
+                        currentInvoice.setEmployee(employee);
+                        currentInvoice.setItems(new ArrayList<>(items));
+                        invoices.add(currentInvoice);
+                    }
+                    
+                    // Parse thông tin hóa đơn mới
+                    String id = line.substring(line.indexOf("ID:") + 4, line.indexOf(",")).trim();
+                    String dateStr = line.substring(line.indexOf("Date:") + 6, line.indexOf("]")).trim();
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    Date date = sdf.parse(dateStr);
+                    
+                    currentInvoice = new Invoice(id, date);
+                    items = new ArrayList<>(); // Reset items list
+                } else if (line.startsWith("Khach hang:")) {
+                    try {
+                        String[] parts = line.substring("Khach hang:".length()).trim().split("-", 2);
+                        String customerId = parts[0].trim();
+                        customer = customerService.findById(customerId)
+                            .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng: " + customerId));
+                    } catch (Exception e) {
+                        System.err.println("Lỗi khi xử lý thông tin khách hàng: " + e.getMessage());
+                        customer = null; // Reset customer nếu có lỗi
+                    }
+                } else if (line.startsWith("Nhan vien:")) {
+                    try {
+                        String[] parts = line.substring("Nhan vien:".length()).trim().split("-", 2);
+                        String employeeId = parts[0].trim();
+                        employee = employeeService.findById(employeeId)
+                            .orElseThrow(() -> new RuntimeException("Không tìm thấy nhân viên: " + employeeId));
+                    } catch (Exception e) {
+                        System.err.println("Lỗi khi xử lý thông tin nhân viên: " + e.getMessage());
+                        employee = null; // Reset employee nếu có lỗi
+                    }
+                } else if (line.startsWith("-") && line.contains("(Ma:") && line.contains("x")) {
+                    try {
+                        // Parse chi tiết sản phẩm
+                        String productInfo = line.substring(1).trim();
+                        int maIndex = productInfo.indexOf("(Ma:");
+                        int closeParenIndex = productInfo.indexOf(")", maIndex);
+                        int xIndex = productInfo.indexOf("x", closeParenIndex);
+                        
+                        // Lấy tên sản phẩm
+                       // String productName = productInfo.substring(0, maIndex).trim();
+                        // Lấy mã sản phẩm
+                        String productId = productInfo.substring(maIndex + 4, closeParenIndex).trim();
+                        // Lấy số lượng
+                        String quantityStr = productInfo.substring(xIndex + 1, productInfo.indexOf(":")).trim();
+                        int quantity = Integer.parseInt(quantityStr);
+                        
+                        // Tìm sản phẩm trong service
+                        Product product = productService.findById(productId)
+                            .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm: " + productId));
+                        
+                        if (currentInvoice != null) {
+                            items.add(new Invoice.InvoiceDetail(product, quantity));
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Lỗi khi xử lý chi tiết sản phẩm: " + e.getMessage());
+                    }
+                }
+            }
+            
+            // Xử lý hóa đơn cuối cùng
+            if (currentInvoice != null && customer != null && employee != null) {
+                currentInvoice.setCustomer(customer);
+                currentInvoice.setEmployee(employee);
+                currentInvoice.setItems(new ArrayList<>(items));
+                invoices.add(currentInvoice);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Lỗi khi đọc file hóa đơn: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return invoices;
     }
 } 

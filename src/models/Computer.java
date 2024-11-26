@@ -23,11 +23,40 @@ public class Computer extends Product {
 
     @Override
     public String getInfo() {
+        // Kiểm tra và chuẩn hóa hardDrive
+        String formattedHardDrive = hardDrive;
+        if (formattedHardDrive.endsWith(", Hard Drive: GB")) {
+            formattedHardDrive = formattedHardDrive.substring(0, formattedHardDrive.indexOf(", Hard Drive: GB"));
+        }
+        if (!formattedHardDrive.contains("GB")) {
+            formattedHardDrive = formattedHardDrive + "GB";
+        }
+
         return String.format("Computer [ID: %s, Name: %s, Price: %,.0f, Quantity: %d, " +
                            "CPU: %s, RAM: %s, Hard Drive: %s]",
                            getId(), getName(), getPrice(), getQuantity(), 
-                           cpu, ram, hardDrive);
+                           cpu, 
+                           ram.contains("GB") ? ram : ram + "GB", 
+                           formattedHardDrive);
     }
 
-   
+    @Override
+    public void display() {
+        // Sử dụng cùng logic với getInfo()
+        String formattedHardDrive = hardDrive;
+        if (formattedHardDrive.endsWith(", Hard Drive: GB")) {
+            formattedHardDrive = formattedHardDrive.substring(0, formattedHardDrive.indexOf(", Hard Drive: GB"));
+        }
+        if (!formattedHardDrive.contains("GB")) {
+            formattedHardDrive = formattedHardDrive + "GB";
+        }
+
+        System.out.printf("Computer [ID: %s, Name: %s, Price: %,.0f, Quantity: %d, " +
+                   "CPU: %s, RAM: %s, Hard Drive: %s]%n",
+                   getId(), getName(), getPrice(), getQuantity(), 
+                   cpu, 
+                   ram.contains("GB") ? ram : ram + "GB", 
+                   formattedHardDrive);
+    }
+
 } 
