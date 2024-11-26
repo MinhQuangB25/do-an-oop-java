@@ -44,8 +44,17 @@ public class Customer implements Identifiable, Printable, Serializable {
 
     @Override
     public String getInfo() {
+        String displayPhone = phone;
+        String displayAddress = address;
+        
+        if (phone != null && address != null && 
+            phone.matches(".*[a-zA-Z].*") && address.matches("\\d+")) {
+            displayPhone = address;
+            displayAddress = phone;
+        }
+        
         return String.format("Customer [ID: %s, Name: %s, Address: %s, Phone: %s]",
-                           id, name, address, phone);
+                           id, name, displayAddress, displayPhone);
     }
 
     @Override

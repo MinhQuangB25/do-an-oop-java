@@ -62,9 +62,13 @@ public class InvoiceService extends BaseService<Invoice> {
 
     public void processNewInvoice() {
         try {
+            // Hiển thị danh sách khách hàng
+            System.out.println("\n=== DANH SACH KHACH HANG ===");
+            customerService.displayFromFile();
+            
             Customer customer = null;
             while (customer == null) {
-                String customerId = getStringInput("Nhap ma khach hang (Enter de them khach hang moi): ");
+                String customerId = getStringInput("\nNhap ma khach hang (Enter de them khach hang moi): ");
                 
                 if (customerId.isEmpty()) {
                     // Nhập thông tin khách hàng mới
@@ -72,7 +76,7 @@ public class InvoiceService extends BaseService<Invoice> {
                     String address = getStringInput("Nhap dia chi: ");
                     String phone = getStringInput("Nhap so dien thoai: ");
                     
-                    // Tạo ID mới dựa trên danh sách hiện có
+                    // Tạo ID mới cho khách hàng
                     List<Customer> customers = customerService.getAllItems();
                     int maxId = 0;
                     for (Customer c : customers) {
@@ -81,24 +85,16 @@ public class InvoiceService extends BaseService<Invoice> {
                                 int id = Integer.parseInt(c.getId().substring(2));
                                 maxId = Math.max(maxId, id);
                             } catch (NumberFormatException e) {
-                                continue;
+                                // Bỏ qua nếu không parse được
                             }
                         }
                     }
-                    String newId = "KH" + String.format("%03d", maxId + 1);
+                    String newId = String.format("KH%03d", maxId + 1);
                     
-                    // Tạo khách hàng mới
                     customer = new Customer(newId, name, address, phone);
-                    
-                    try {
-                        customerService.addCustomer(customer);
-                        System.out.println("Da them khach hang moi: " + customer.getId());
-                    } catch (IllegalArgumentException e) {
-                        System.out.println("Loi khi them khach hang: " + e.getMessage());
-                        customer = null; // Reset để nhập lại
-                    }
+                    customerService.addCustomer(customer);
+                    System.out.println("Da them khach hang moi: " + customer.getId());
                 } else {
-                    // Tìm khách hàng hiện có
                     Optional<Customer> existingCustomer = customerService.findById(customerId);
                     if (existingCustomer.isPresent()) {
                         customer = existingCustomer.get();
@@ -108,7 +104,11 @@ public class InvoiceService extends BaseService<Invoice> {
                 }
             }
 
-            String employeeId = getStringInput("Nhap ma nhan vien: ");
+            // Hiển thị danh sách nhân viên
+            System.out.println("\n=== DANH SACH NHAN VIEN ===");
+            employeeService.displayEmployeesFromFile();
+
+            String employeeId = getStringInput("\nNhap ma nhan vien: ");
             employeeService.loadItems();
             
             Employee employee = employeeService.findById(employeeId)
@@ -121,9 +121,13 @@ public class InvoiceService extends BaseService<Invoice> {
             invoice.setCustomer(customer);
             invoice.setEmployee(employee);
             
+            // Hiển thị danh sách sản phẩm
+            System.out.println("\n=== DANH SACH SAN PHAM ===");
+            productService.displayProductsFromFile();
+            
             boolean hasProducts = false;
             while (true) {
-                String productId = getStringInput("Nhap ma san pham (Enter de ket thuc): ");
+                String productId = getStringInput("\nNhap ma san pham (Enter de ket thuc): ");
                 if (productId.isEmpty()) {
                     if (!hasProducts) {
                         System.out.println("Hoa don phai co it nhat mot san pham!");
@@ -150,11 +154,15 @@ public class InvoiceService extends BaseService<Invoice> {
                 invoice.addItem(product, quantity);
                 productService.updateProductQuantity(productId, quantity);
                 hasProducts = true;
+                
+                // Hiển thị lại danh sách sản phẩm sau mỗi lần thêm
+                System.out.println("\n=== DANH SACH SAN PHAM HIEN TAI ===");
+                productService.displayProductsFromFile();
             }
             
             items.add(invoice);
             fileHandler.saveInvoiceToText(invoice, filename);
-            System.out.println("Tao hoa don thanh cong!");
+            System.out.println("\nTao hoa don thanh cong!");
             invoice.display();
             
         } catch (IllegalArgumentException e) {
@@ -291,26 +299,22 @@ public class InvoiceService extends BaseService<Invoice> {
 
     public void displayInvoiceStatistics() {
         try {
-            // Đọc dữ liệu từ file
             List<String> lines = fileHandler.readAllLines(filename);
             if (lines.isEmpty()) {
                 System.out.println("Chua co hoa don nao!");
                 return;
             }
 
-            // Khởi tạo các biến thống kê
             double totalRevenue = 0;
             int totalProducts = 0;
-            Map<String, Integer> productSales = new HashMap<>();
+            Map<String, ProductSalesStats> productSales = new HashMap<>();
             Map<String, CustomerStats> customerStats = new HashMap<>();
             Map<String, EmployeeStats> employeeStats = new HashMap<>();
 
-            // Biến tạm để theo dõi hóa đơn hiện tại
             String currentCustomerId = null;
             String currentEmployeeId = null;
             double currentInvoiceTotal = 0;
 
-            // Duyệt qua từng dòng trong file
             for (String line : lines) {
                 line = line.trim();
                 
@@ -319,14 +323,30 @@ public class InvoiceService extends BaseService<Invoice> {
                 } else if (line.contains("Nhan vien:")) {
                     currentEmployeeId = line.substring(line.indexOf(":") + 1).trim().split("-")[0].trim();
                 } else if (line.contains("(Ma:") && line.contains("x")) {
-                    // Xử lý dòng sản phẩm
-                    String[] parts = line.split("x");
-                    String productInfo = parts[0].trim();
-                    String productId = productInfo.substring(productInfo.indexOf("(Ma:") + 4, productInfo.indexOf(")")).trim();
-                    int quantity = Integer.parseInt(parts[1].split(":")[0].trim());
-                    
-                    totalProducts += quantity;
-                    productSales.merge(productId, quantity, Integer::sum);
+                    try {
+                        // Xử lý dòng sản phẩm
+                        String[] parts = line.split("x");
+                        String productInfo = parts[0].trim();
+                        String productName = productInfo.substring(2, productInfo.indexOf("(Ma:")).trim();
+                        String productId = productInfo.substring(productInfo.indexOf("(Ma:") + 4, productInfo.indexOf(")")).trim();
+                        
+                        // Lấy số lượng và giá
+                        String quantityAndPrice = parts[1].trim();
+                        int quantity = Integer.parseInt(quantityAndPrice.substring(0, quantityAndPrice.indexOf(":")).trim());
+                        double price = Double.parseDouble(quantityAndPrice.substring(quantityAndPrice.indexOf(":") + 1)
+                            .replace("VND", "").replace(",", "").trim());
+                        
+                        totalProducts += quantity;
+                        
+                        // Cập nhật thống kê sản phẩm với giá đơn vị chính xác
+                        double pricePerUnit = price / quantity;
+                        ProductSalesStats stats = productSales.computeIfAbsent(productId,
+                            k -> new ProductSalesStats(productId, productName));
+                        stats.addSale(quantity, pricePerUnit);
+                        
+                    } catch (Exception e) {
+                        System.err.println("Loi khi xu ly chi tiet san pham: " + e.getMessage());
+                    }
                 } else if (line.startsWith("Tong tien:")) {
                     String amountStr = line.substring(line.indexOf(":") + 1)
                         .replace("VND", "")
@@ -335,27 +355,25 @@ public class InvoiceService extends BaseService<Invoice> {
                     currentInvoiceTotal = Double.parseDouble(amountStr);
                     totalRevenue += currentInvoiceTotal;
 
-                    // Tạo bản sao của các biến để sử dụng trong lambda
-                    final String customerId = currentCustomerId;
-                    final double invoiceTotal = currentInvoiceTotal;
+                    // Cập nhật thống kê khách hàng và nhân viên
+                    final String finalCustomerId = currentCustomerId;
+                    final String finalEmployeeId = currentEmployeeId;
+                    final double finalInvoiceTotal = currentInvoiceTotal;
 
-                    // Cập nhật thống kê cho khách hàng và nhân viên
-                    if (customerId != null) {
-                        customerService.findById(customerId).ifPresent(customer -> 
-                            customerStats.computeIfAbsent(customerId, 
+                    if (finalCustomerId != null) {
+                        customerService.findById(finalCustomerId).ifPresent(customer -> 
+                            customerStats.computeIfAbsent(finalCustomerId, 
                                 k -> new CustomerStats(customer))
-                                .addInvoice(invoiceTotal));
+                                .addInvoice(finalInvoiceTotal));
                     }
 
-                    final String employeeId = currentEmployeeId;
-                    if (employeeId != null) {
-                        employeeService.findById(employeeId).ifPresent(employee -> 
-                            employeeStats.computeIfAbsent(employeeId, 
+                    if (finalEmployeeId != null) {
+                        employeeService.findById(finalEmployeeId).ifPresent(employee -> 
+                            employeeStats.computeIfAbsent(finalEmployeeId, 
                                 k -> new EmployeeStats(employee))
-                                .addInvoice(invoiceTotal));
+                                .addInvoice(finalInvoiceTotal));
                     }
 
-                    // Reset cho hóa đơn tiếp theo
                     currentCustomerId = null;
                     currentEmployeeId = null;
                     currentInvoiceTotal = 0;
@@ -364,25 +382,20 @@ public class InvoiceService extends BaseService<Invoice> {
 
             // Hiển thị thống kê
             System.out.println("\n=== THONG KE HOA DON ===");
-            System.out.printf("Tong doanh thu: %.0f VND%n", totalRevenue);
+            System.out.printf("Tong doanh thu: %,.0f VND%n", totalRevenue);
             System.out.println("Tong so san pham da ban: " + totalProducts);
 
             // Hiển thị top sản phẩm bán chạy
             System.out.println("\nTop san pham ban chay:");
-            productSales.entrySet().stream()
-                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+            productSales.values().stream()
+                .sorted((p1, p2) -> Double.compare(p2.getTotalRevenue(), p1.getTotalRevenue()))
                 .limit(5)
-                .forEach(entry -> {
-                    String productId = entry.getKey();
-                    int quantity = entry.getValue();
-                    productService.findById(productId).ifPresent(product -> {
-                        double revenue = quantity * product.getPrice();
-                        System.out.printf("- %s - %s: %d san pham - %.0f VND%n",
-                            product.getId(),
-                            product.getName(),
-                            quantity,
-                            revenue);
-                    });
+                .forEach(stats -> {
+                    System.out.printf("- %s - %s: %d san pham - %,.0f VND%n",
+                        stats.getProductId(),
+                        stats.getProductName(),
+                        stats.getTotalQuantity(),
+                        stats.getTotalRevenue());
                 });
 
             // Hiển thị thống kê theo khách hàng
@@ -391,7 +404,7 @@ public class InvoiceService extends BaseService<Invoice> {
                 .sorted((c1, c2) -> Double.compare(c2.getTotalAmount(), c1.getTotalAmount()))
                 .limit(5)
                 .forEach(stats -> {
-                    System.out.printf("- %s - %s: %d hoa don - %.0f VND%n",
+                    System.out.printf("- %s - %s: %d hoa don - %,.0f VND%n",
                         stats.getCustomer().getId(),
                         stats.getCustomer().getName(),
                         stats.getInvoiceCount(),
@@ -403,15 +416,13 @@ public class InvoiceService extends BaseService<Invoice> {
             employeeStats.values().stream()
                 .sorted((e1, e2) -> Double.compare(e2.getTotalAmount(), e1.getTotalAmount()))
                 .forEach(stats -> {
-                    System.out.printf("- %s - %s: %d hoa don - %.0f VND%n",
+                    System.out.printf("- %s - %s: %d hoa don - %,.0f VND%n",
                         stats.getEmployee().getId(),
                         stats.getEmployee().getName(),
                         stats.getInvoiceCount(),
                         stats.getTotalAmount());
                 });
 
-        } catch (IOException e) {
-            System.err.println("Loi khi doc file hoa don: " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Loi khi xu ly thong ke: " + e.getMessage());
         }
@@ -455,5 +466,28 @@ public class InvoiceService extends BaseService<Invoice> {
         public Employee getEmployee() { return employee; }
         public int getInvoiceCount() { return invoiceCount; }
         public double getTotalAmount() { return totalAmount; }
+    }
+
+    // Thêm class ProductSalesStats vào cuối file InvoiceService.java
+    private static class ProductSalesStats {
+        private final String productId;
+        private final String productName;
+        private int totalQuantity = 0;
+        private double totalRevenue = 0;
+        
+        public ProductSalesStats(String productId, String productName) {
+            this.productId = productId;
+            this.productName = productName;
+        }
+        
+        public void addSale(int quantity, double pricePerUnit) {
+            this.totalQuantity += quantity;
+            this.totalRevenue += quantity * pricePerUnit;
+        }
+        
+        public String getProductId() { return productId; }
+        public String getProductName() { return productName; }
+        public int getTotalQuantity() { return totalQuantity; }
+        public double getTotalRevenue() { return totalRevenue; }
     }
 } 

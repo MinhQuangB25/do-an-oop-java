@@ -326,12 +326,19 @@ public class FileHandler<T> {
     private Customer parseCustomer(String line) {
         try {
             Map<String, String> data = extractData(line);
-            return new Customer(
-                data.getOrDefault("ID", "").trim(),
-                data.getOrDefault("Name", "").trim(),
-                data.getOrDefault("Phone", "").trim(),
-                data.getOrDefault("Address", "").trim()
-            );
+            String id = data.getOrDefault("ID", "").trim();
+            String name = data.getOrDefault("Name", "").trim();
+            String address = data.getOrDefault("Address", "").trim();
+            String phone = data.getOrDefault("Phone", "").trim();
+            
+            // Kiểm tra nếu phone chứa chữ và address chứa số, đổi chỗ cho nhau
+            if (phone.matches(".*[a-zA-Z].*") && address.matches("\\d+")) {
+                String temp = phone;
+                phone = address;
+                address = temp;
+            }
+            
+            return new Customer(id, name, address, phone);
         } catch (Exception e) {
             System.err.println("Lỗi khi parse Customer: " + e.getMessage());
             return null;

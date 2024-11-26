@@ -3,10 +3,10 @@ package models;
 import interfaces.SystemInterfaces.Identifiable;
 import interfaces.SystemInterfaces.Printable;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.text.SimpleDateFormat;
 
 public class Invoice implements Identifiable, Printable, Serializable {
     private String id;

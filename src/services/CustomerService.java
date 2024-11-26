@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class CustomerService extends BaseService<Customer> {
     public CustomerService() {
         super("customers.txt");
+        fixCustomerData();
     }
     
     @Override
@@ -173,6 +174,32 @@ public class CustomerService extends BaseService<Customer> {
     public List<Customer> getAllItems() {
         loadItems();
         return new ArrayList<>(items);
+    }
+
+    public void fixCustomerData() {
+        loadItems();
+        boolean needsUpdate = false;
+        
+        for (Customer customer : items) {
+            String phone = customer.getPhone();
+            String address = customer.getAddress();
+            
+            // Nếu phone chứa chữ và address chứa số, đổi chỗ cho nhau
+            if (phone != null && address != null && 
+                phone.matches(".*[a-zA-Z].*") && address.matches("\\d+")) {
+                customer.setPhone(address);
+                customer.setAddress(phone);
+                needsUpdate = true;
+            }
+        }
+        
+        if (needsUpdate) {
+            // Cập nhật lại file
+            fileHandler.setUpdatingFile(true);
+            fileHandler.saveToFile(filename, items);
+            fileHandler.setUpdatingFile(false);
+            System.out.println("Da sua lai thong tin khach hang!");
+        }
     }
 
     // ... các phương thức đặc thù của CustomerService ...
