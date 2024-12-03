@@ -1,18 +1,17 @@
 package services;
 
-import models.Invoice;
-import models.Product;
-import models.Customer;
-import models.Employee;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
-//import java.util.stream.Collectors;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import models.Customer;
+import models.Employee;
+import models.Invoice;
+import models.Product;
 
 public class InvoiceService extends BaseService<Invoice> {
     private CustomerService customerService;
@@ -27,7 +26,7 @@ public class InvoiceService extends BaseService<Invoice> {
         this.employeeService = employeeService;
         this.productService = productService;
         this.fileHandler.setServices(customerService, employeeService, productService);
-        loadItems();
+
     }
 
     @Override
@@ -60,8 +59,8 @@ public class InvoiceService extends BaseService<Invoice> {
     }
 
     public void processNewInvoice() {
+        loadItems();
         try {
-            // Hiển thị danh sách khách hàng
             System.out.println("\n=== DANH SACH KHACH HANG ===");
             customerService.displayFromFile();
             
@@ -70,12 +69,9 @@ public class InvoiceService extends BaseService<Invoice> {
                 String customerId = getStringInput("\nNhap ma khach hang (Enter de them khach hang moi): ");
                 
                 if (customerId.isEmpty()) {
-                    // Nhập thông tin khách hàng mới
                     String name = getStringInput("Nhap ten khach hang: ");
                     String address = getStringInput("Nhap dia chi: ");
                     String phone = getStringInput("Nhap so dien thoai: ");
-                    
-                    // Tạo ID mới cho khách hàng
                     List<Customer> customers = customerService.getAllItems();
                     int maxId = 0;
                     for (Customer c : customers) {
@@ -84,7 +80,6 @@ public class InvoiceService extends BaseService<Invoice> {
                                 int id = Integer.parseInt(c.getId().substring(2));
                                 maxId = Math.max(maxId, id);
                             } catch (NumberFormatException e) {
-                                // Bỏ qua nếu không parse được
                             }
                         }
                     }
@@ -103,7 +98,6 @@ public class InvoiceService extends BaseService<Invoice> {
                 }
             }
 
-            // Hiển thị danh sách nhân viên
             System.out.println("\n=== DANH SACH NHAN VIEN ===");
             employeeService.displayEmployeesFromFile();
 
@@ -120,7 +114,7 @@ public class InvoiceService extends BaseService<Invoice> {
             invoice.setCustomer(customer);
             invoice.setEmployee(employee);
             
-            // Hiển thị danh sách sản phẩm
+            
             System.out.println("\n=== DANH SACH SAN PHAM ===");
             productService.displayProductsFromFile();
             
@@ -154,7 +148,6 @@ public class InvoiceService extends BaseService<Invoice> {
                 productService.updateProductQuantity(productId, quantity);
                 hasProducts = true;
                 
-                // Hiển thị lại danh sách sản phẩm sau mỗi lần thêm
                 System.out.println("\n=== DANH SACH SAN PHAM HIEN TAI ===");
                 productService.displayProductsFromFile();
             }
@@ -188,13 +181,11 @@ public class InvoiceService extends BaseService<Invoice> {
             for (String line : lines) {
                 if (line.contains("Invoice [")) {
                     if (isCurrentInvoice) {
-                        // In hóa đơn trước đó nếu đang trong quá trình hiển thị
                         printInvoice(currentInvoiceLines);
                         currentInvoiceLines.clear();
                         isCurrentInvoice = false;
                     }
                     
-                    // Kiểm tra nếu là hóa đơn cần tìm
                     if (line.toUpperCase().contains(invoiceId)) {
                         isCurrentInvoice = true;
                         found = true;
@@ -206,7 +197,6 @@ public class InvoiceService extends BaseService<Invoice> {
                 }
             }
             
-            // In hóa đơn cuối cùng nếu có
             if (!currentInvoiceLines.isEmpty()) {
                 printInvoice(currentInvoiceLines);
             }
@@ -241,7 +231,6 @@ public class InvoiceService extends BaseService<Invoice> {
             for (String line : lines) {
                 if (line.contains("Invoice [")) {
                     if (isCurrentInvoice && isCustomerInvoice) {
-                        // In hóa đơn trước đó của khách hàng này
                         printInvoice(currentInvoiceLines);
                     }
                     currentInvoiceLines.clear();
@@ -251,7 +240,6 @@ public class InvoiceService extends BaseService<Invoice> {
                 
                 if (isCurrentInvoice) {
                     currentInvoiceLines.add(line);
-                    // Kiểm tra nếu là dòng thông tin khách hàng
                     if (line.contains("Khach hang:") && line.contains(customerId)) {
                         isCustomerInvoice = true;
                         found = true;
@@ -259,7 +247,6 @@ public class InvoiceService extends BaseService<Invoice> {
                 }
             }
             
-            // In hóa đơn cuối cùng nếu là của khách hàng này
             if (!currentInvoiceLines.isEmpty() && isCustomerInvoice) {
                 printInvoice(currentInvoiceLines);
             }
@@ -286,7 +273,6 @@ public class InvoiceService extends BaseService<Invoice> {
                         items.add(currentInvoice);
                     }
                     
-                    // Parse invoice header
                     String[] parts = line.split("\\[|\\]")[1].split(",");
                     String id = parts[0].split(":")[1].trim();
                     String dateStr = parts[1].split(":")[1].trim();
@@ -313,7 +299,6 @@ public class InvoiceService extends BaseService<Invoice> {
                             employeeService.findById(employeeId).ifPresent(invoice::setEmployee);
                         }
                     } else if (line.contains("(Ma:") && line.contains("x")) {
-                        // Parse product details
                         String[] parts = line.split("x");
                         String productInfo = parts[0].trim();
                         String productId = productInfo.substring(
@@ -321,13 +306,11 @@ public class InvoiceService extends BaseService<Invoice> {
                             productInfo.indexOf(")")
                         ).trim();
                         
-                        // Extract quantity
                         String quantityStr = parts[1].trim();
                         int quantity = Integer.parseInt(
                             quantityStr.substring(0, quantityStr.indexOf(":")).trim()
                         );
                         
-                        // Add product to invoice
                         productService.findById(productId).ifPresent(product -> 
                             invoice.addItem(product, quantity)
                         );
@@ -338,7 +321,6 @@ public class InvoiceService extends BaseService<Invoice> {
             }
         }
         
-        // Add the last invoice if exists
         if (currentInvoice != null) {
             items.add(currentInvoice);
         }
@@ -371,21 +353,16 @@ public class InvoiceService extends BaseService<Invoice> {
                     currentEmployeeId = line.substring(line.indexOf(":") + 1).trim().split("-")[0].trim();
                 } else if (line.contains("(Ma:") && line.contains("x")) {
                     try {
-                        // Xử lý dòng sản phẩm
                         String[] parts = line.split("x");
                         String productInfo = parts[0].trim();
                         String productName = productInfo.substring(2, productInfo.indexOf("(Ma:")).trim();
                         String productId = productInfo.substring(productInfo.indexOf("(Ma:") + 4, productInfo.indexOf(")")).trim();
-                        
-                        // Lấy số lượng và giá
                         String quantityAndPrice = parts[1].trim();
                         int quantity = Integer.parseInt(quantityAndPrice.substring(0, quantityAndPrice.indexOf(":")).trim());
                         double price = Double.parseDouble(quantityAndPrice.substring(quantityAndPrice.indexOf(":") + 1)
                             .replace("VND", "").replace(",", "").trim());
                         
                         totalProducts += quantity;
-                        
-                        // Cập nhật thống kê sản phẩm với giá đơn vị chính xác
                         double pricePerUnit = price / quantity;
                         ProductSalesStats stats = productSales.computeIfAbsent(productId,
                             k -> new ProductSalesStats(productId, productName));
@@ -401,8 +378,6 @@ public class InvoiceService extends BaseService<Invoice> {
                         .trim();
                     currentInvoiceTotal = Double.parseDouble(amountStr);
                     totalRevenue += currentInvoiceTotal;
-
-                    // Cập nhật thống kê khách hàng và nhân viên
                     final String finalCustomerId = currentCustomerId;
                     final String finalEmployeeId = currentEmployeeId;
                     final double finalInvoiceTotal = currentInvoiceTotal;
@@ -427,12 +402,11 @@ public class InvoiceService extends BaseService<Invoice> {
                 }
             }
 
-            // Hiển thị thống kê
+            
             System.out.println("\n=== THONG KE HOA DON ===");
             System.out.printf("Tong doanh thu: %,.0f VND%n", totalRevenue);
             System.out.println("Tong so san pham da ban: " + totalProducts);
 
-            // Hiển thị top sản phẩm bán chạy
             System.out.println("\nTop san pham ban chay:");
             productSales.values().stream()
                 .sorted((p1, p2) -> Double.compare(p2.getTotalRevenue(), p1.getTotalRevenue()))
@@ -444,8 +418,6 @@ public class InvoiceService extends BaseService<Invoice> {
                         stats.getTotalQuantity(),
                         stats.getTotalRevenue());
                 });
-
-            // Hiển thị thống kê theo khách hàng
             System.out.println("\nTop khach hang:");
             customerStats.values().stream()
                 .sorted((c1, c2) -> Double.compare(c2.getTotalAmount(), c1.getTotalAmount()))
@@ -458,7 +430,7 @@ public class InvoiceService extends BaseService<Invoice> {
                         stats.getTotalAmount());
                 });
 
-            // Hiển thị thống kê theo nhân viên
+            
             System.out.println("\nHieu suat nhan vien:");
             employeeStats.values().stream()
                 .sorted((e1, e2) -> Double.compare(e2.getTotalAmount(), e1.getTotalAmount()))
@@ -475,7 +447,6 @@ public class InvoiceService extends BaseService<Invoice> {
         }
     }
 
-    // Lớp hỗ trợ thống kê khách hàng
     private static class CustomerStats {
         private final Customer customer;
         private int invoiceCount = 0;
@@ -495,7 +466,7 @@ public class InvoiceService extends BaseService<Invoice> {
         public double getTotalAmount() { return totalAmount; }
     }
 
-    // Lớp hỗ trợ thống kê nhân viên
+
     private static class EmployeeStats {
         private final Employee employee;
         private int invoiceCount = 0;
@@ -515,7 +486,6 @@ public class InvoiceService extends BaseService<Invoice> {
         public double getTotalAmount() { return totalAmount; }
     }
 
-    // Thêm class ProductSalesStats vào cuối file InvoiceService.java
     private static class ProductSalesStats {
         private final String productId;
         private final String productName;
